@@ -74,5 +74,4 @@ const useSearchHistory = (maxRecords = 8, maxDays = 7) => {
     handleClearHistory,
   };
 };
-
-module.exports = useSearchHistory;
+export default useSearchHistory;

@@ -26,4 +26,4 @@ const useIsEmpty = (value: any): boolean => {
   }, [value]);
 };
 
-module.exports = useIsEmpty;
+export default useIsEmpty;
