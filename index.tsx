@@ -1,4 +1,4 @@
-import useSearchHistory from "./src/searchHistory";
-import useIsEmpty from "./src/useEmpty";
+import useSearchHistory from "./src/hook/searchHistory";
+import useIsEmpty from "./src/hook/useEmpty";
 
 export { useSearchHistory, useIsEmpty };

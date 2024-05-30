@@ -1,4 +1,9 @@
 import { useMemo } from "react";
+/**
+@example 为空时返回true，否则返回false
+
+@param value 为必传参数，根据value的值返回true或false
+*/
 
 const useIsEmpty = (value: any): boolean => {
   return useMemo(() => {

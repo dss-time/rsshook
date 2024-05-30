@@ -1,0 +1,26 @@
+.historyItem {
+  display: flex;
+  justfy-content: space-between;
+  text-indent: 10px;
+  letter-spacing: 1px;
+  line-height: 2.7;
+}
+.historyItem:hover {
+  background-color: #f0f0f0;
+}
+.historyItemChild {
+  cursor: pointer;
+  width: 90%;
+}
+.historyIcon {
+  width: 25px;
+  height: 30px;
+  line-height: 2.7;
+  text-align: center;
+  cursor: pointer;
+  text-indent: 2px;
+  border-radius: 20%;
+}
+.historyIcon:hover {
+  background-color: #b4b4b8;
+}
