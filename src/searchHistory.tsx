@@ -1,4 +1,6 @@
-const { useEffect, useState } = require("react");
+import { useEffect } from "react";
+import { useState } from "react";
+
 const useSearchHistory = (maxRecords = 8, maxDays = 7) => {
   const [searchHistory, setSearchHistory] = useState(() => {
     const history = localStorage.getItem("searchHistory");
