@@ -1,6 +1,6 @@
 import { AutoComplete, Input } from "antd";
 import { forwardRef, useImperativeHandle, useState } from "react";
-import styles from "./search.moudle.css";
+import styles from "./Search.module.css";
 import useSearchHistory from "../../hooks/searchHistory";
 import React from "react";
 
