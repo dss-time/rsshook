@@ -1,4 +1,4 @@
-const { useMemo } = require("react");
+import { useMemo } from "react";
 
 const useIsEmpty = (value: any): boolean => {
   return useMemo(() => {
