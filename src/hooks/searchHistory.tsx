@@ -1,6 +1,11 @@
 import { useEffect } from "react";
 import { useState } from "react";
+/**
 
+@see maxRecords 8条搜索数据
+@see maxDays 最多保存七天
+
+*/
 const useSearchHistory = (maxRecords = 8, maxDays = 7) => {
   const [searchHistory, setSearchHistory] = useState(() => {
     const history = localStorage.getItem("searchHistory");
