@@ -18,23 +18,42 @@ $RECYCLE.BIN/
 *.msm
 *.msp
 
-# IntelliJ
+# Editors
 .idea/
 *.iml
+*.suo
+*.ntvs*
+*.njsproj
+*.sln
 
 # Node.js
 node_modules/
 npm-debug.log*
 
 # NPM Packages
+npm-debug.log*
 *.tgz
 dist/
 
 # Standard
 tmp/
 *.log
+logs
 
 # Yarn
 /yarn-error.log
 /yarn.lock
+/yarn-debug.log*
+
+
+#Package.json
 /package-lock.json
+
+# Runtime data
+pids
+*.pid
+*.seed
+*.pid.lock
+
+# Coverage directory used by tools like istanbul
+coverage
