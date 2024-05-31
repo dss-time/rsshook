@@ -1,7 +1,7 @@
 import { AutoComplete, Input } from "antd";
 import { forwardRef, useImperativeHandle, useState } from "react";
 import styles from "./Search.module.css";
-import useSearchHistory from "../../hooks/searchHistory";
+import useSearchHistory from "../../hooks/useSearchHistory";
 import React from "react";
 
 const SearchForHistory = ({ fresh }: { fresh: any }, ref: any) => {

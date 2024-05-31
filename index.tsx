@@ -1,4 +1,5 @@
-import useSearchHistory from "./src/hook/searchHistory";
-import useIsEmpty from "./src/hook/useEmpty";
+import useSearchHistory from "./src/hooks/useSearchHistory";
+import useIsEmpty from "./src/hooks/useEmpty";
+import useExpandCollapse from "./src/hooks/useExpandCollapse";
 
-export { useSearchHistory, useIsEmpty };
+export { useSearchHistory, useIsEmpty, useExpandCollapse };
