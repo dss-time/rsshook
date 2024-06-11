@@ -2,5 +2,12 @@ import useSearchHistory from "./src/hooks/useSearchHistory";
 import useIsEmpty from "./src/hooks/useEmpty";
 import useExpandCollapse from "./src/hooks/useExpandCollapse";
 import useOnlineStatus from "./src/hooks/useOnlineStatus";
+import useDebounce from "./src/hooks/useDebounce";
 
-export { useSearchHistory, useIsEmpty, useExpandCollapse, useOnlineStatus };
+export {
+  useSearchHistory,
+  useIsEmpty,
+  useExpandCollapse,
+  useOnlineStatus,
+  useDebounce,
+};
