@@ -1,5 +1,9 @@
 import { useState } from "react";
+/**
+@example text 是传入的文本(text is the text passed in)
 
+@param maxLength 最大显示数字数量(Maximum number of displayed digits)
+*/
 const useExpandCollapse = (text: string, maxLength: number) => {
   const [isExpanded, setIsExpanded] = useState(false);
 
