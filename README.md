@@ -1,28 +1,36 @@
 # Project Name
 
-some react hook
+rsshook
 
 ## Table of Contents
 
--
+- [Installation](#installation)
 - [Usage](#usage)
-- [Help](#help)
 - [License](#license)
 
-## Help
-
-This is my first open source project. I am not very experienced. I hope you can give me some suggestions. Thanks.
-email：d1667494390@gmail.com
-
-## Usage
+## Installation
 
 ```coffeescript
 yarn add rsshook  or  npm i rsshook
 ```
 
+## Usage
+
+```tsx
+import { useIsEmpty } from "rsshook";
+
+const isEmpty = "";
+const result = useIsEmpty(isEmpty);
+console.log(result); //true
+```
+
 ## License
 
 MIT
+
+## Help
+
+email：d1667494390@gmail.com
 
 ## Keywords
 
