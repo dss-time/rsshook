@@ -16,9 +16,9 @@ email：d1667494390@gmail.com
 
 ## Usage
 
-yarn add rsshook
-
-npm i rsshook
+```coffeescript
+yarn add rsshook  or  npm i rsshook
+```
 
 ## License
 
