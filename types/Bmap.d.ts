@@ -1,5 +1,36 @@
 declare namespace BMap {
   type Animation = number;
+
+  interface MapOptions {
+    minZoom?: number;
+    maxZoom?: number;
+    mapType?: MapType;
+    enableHighResolution?: boolean;
+    enableAutoResize?: boolean;
+    enableMapClick?: boolean;
+  }
+
+  enum MapType {
+    NORMAL,
+    PERSPECTIVE,
+    SATELLITE,
+    HYBRID,
+  }
+
+  interface ViewportOptions {
+    enableAnimation?: boolean;
+    margins?: number[];
+    zoomFactor?: number;
+    delay?: number;
+  }
+
+  interface IconOptions {
+    anchor?: Size;
+    imageOffset?: Size;
+    infoWindowAnchor?: Size;
+    printImageUrl?: string;
+  }
+
   class Map {
     constructor(container: string | HTMLElement, opts?: MapOptions);
     centerAndZoom(center: Point | string, zoom: number): void;
@@ -24,12 +55,28 @@ declare namespace BMap {
     addEventListener(event: string, handler: Function): void;
     removeEventListener(event: string, handler: Function): void;
   }
+
   const BMAP_ANIMATION_DROP: Animation;
   const BMAP_ANIMATION_BOUNCE: Animation;
+
   class Point {
     constructor(lng: number, lat: number);
     lng: number;
     lat: number;
+  }
+
+  interface Overlay {
+    initialize(map: Map): HTMLElement | null;
+    draw(): void;
+    show(): void;
+    hide(): void;
+    isVisible(): boolean;
+    setZIndex(zIndex: number): void;
+    getZIndex(): number;
+    setPosition(position: Point): void;
+    getPosition(): Point;
+    addEventListener(event: string, handler: Function): void;
+    removeEventListener(event: string, handler: Function): void;
   }
 
   class Marker implements Overlay {
@@ -41,6 +88,30 @@ declare namespace BMap {
     setLabel(label: Label): void;
     getLabel(): Label;
     setAnimation(animation: Animation | null): void;
+
+    // 实现 Overlay 接口的方法
+    initialize(map: Map): HTMLElement | null;
+    draw(): void;
+    show(): void;
+    hide(): void;
+    isVisible(): boolean;
+    setZIndex(zIndex: number): void;
+    getZIndex(): number;
+    addEventListener(event: string, handler: Function): void;
+    removeEventListener(event: string, handler: Function): void;
+  }
+
+  interface MarkerOptions {
+    offset?: Size;
+    icon?: Icon;
+    enableMassClear?: boolean;
+    enableDragging?: boolean;
+    enableClicking?: boolean;
+    raiseOnDrag?: boolean;
+    draggingCursor?: string;
+    rotation?: number;
+    shadow?: Icon;
+    title?: string;
   }
 
   class Icon {
@@ -64,23 +135,18 @@ declare namespace BMap {
   }
 
   class Control {
-    // 构造函数
     constructor(options?: ControlOptions);
-
-    // 方法
     getContainer(): HTMLElement;
     setPosition(position: ControlPosition): void;
     getPosition(): ControlPosition;
     show(): void;
     hide(): void;
     isVisible(): boolean;
-
-    // 事件
     addEventListener(event: string, handler: Function): void;
     removeEventListener(event: string, handler: Function): void;
   }
 
-  class Label extends Overlay {
+  class Label implements Overlay {
     constructor(content: string, opts?: LabelOptions);
     setContent(content: string): void;
     setStyle(styles: object): void;
@@ -88,6 +154,17 @@ declare namespace BMap {
     getPosition(): Point;
     setOffset(offset: Size): void;
     getOffset(): Size;
+
+    // 实现 Overlay 接口的方法
+    initialize(map: Map): HTMLElement | null;
+    draw(): void;
+    show(): void;
+    hide(): void;
+    isVisible(): boolean;
+    setZIndex(zIndex: number): void;
+    getZIndex(): number;
+    addEventListener(event: string, handler: Function): void;
+    removeEventListener(event: string, handler: Function): void;
   }
 
   interface LabelOptions {
@@ -95,12 +172,11 @@ declare namespace BMap {
     position?: Point;
     enableMassClear?: boolean;
   }
+
   interface ControlOptions {
     anchor?: ControlAnchor;
     offset?: Size;
   }
-
-  interface MarkerAnimation {}
 
   enum ControlAnchor {
     BMAP_ANCHOR_TOP_LEFT,
@@ -114,30 +190,6 @@ declare namespace BMap {
     BMAP_CONTROL_POSITION_TOP_RIGHT,
     BMAP_CONTROL_POSITION_BOTTOM_LEFT,
     BMAP_CONTROL_POSITION_BOTTOM_RIGHT,
-  }
-
-  interface Overlay {
-    // 初始化方法，当调用map.addOverlay时被调用
-    initialize(map: Map): HTMLElement | null;
-    // 绘制方法，当地图状态发生变化时被调用
-    draw(): void;
-    // 显示
-    show(): void;
-    // 隐藏
-    hide(): void;
-    // 是否可见
-    isVisible(): boolean;
-    // 设置叠加层的zIndex
-    setZIndex(zIndex: number): void;
-    // 获取叠加层的zIndex
-    getZIndex(): number;
-    // 设置叠加层的位置
-    setPosition(position: Point): void;
-    // 获取叠加层的位置
-    getPosition(): Point;
-    // 事件监听
-    addEventListener(event: string, handler: Function): void;
-    removeEventListener(event: string, handler: Function): void;
   }
 
   class Convertor {
@@ -167,11 +219,19 @@ declare namespace BMapLib {
     styles?: any[];
   }
 }
+
 declare const BMAP_ANIMATION_DROP: BMap.Animation;
 declare const BMAP_ANIMATION_BOUNCE: BMap.Animation;
-declare global {
-  interface Window {
-    BMap: typeof BMap;
-    BMapLib: typeof BMapLib;
-  }
+
+// export {};
+// declare global {
+//   interface Window {
+//     BMap: typeof BMap;
+//     BMapLib: typeof BMapLib;
+//   }
+// }
+
+interface Window {
+  BMap: typeof BMap;
+  BMapLib: typeof BMapLib;
 }
