@@ -8,6 +8,8 @@ interface MyData {
 }
 
 const UseExcelDemo: React.FC = () => {
+  const { importAndDisplayExcel } = useExcel<any>();
+  const [htmlContent, setHtmlContent] = useState<string>("");
   const { exportToExcel, importFromExcel } = useExcel<MyData>();
   const [exportData, setExportData] = useState<MyData[]>([
     { name: "John Doe", age: 30, email: "john@example.com" },
@@ -30,6 +32,19 @@ const UseExcelDemo: React.FC = () => {
     }
   };
 
+  // const handleImport = async (event: React.ChangeEvent<HTMLInputElement>) => {
+  //   const file = event.target.files?.[0];
+  //   if (file) {
+  //     try {
+  //       const htmlString = await importAndDisplayExcel(file);
+  //       setHtmlContent(htmlString);
+  //     } catch (error) {
+  //       console.error(error);
+  //       alert('文件导入失败');
+  //     }
+  //   }
+  // };
+
   return (
     <div>
       <button onClick={handleExport}>导出数据</button>
@@ -41,6 +56,11 @@ const UseExcelDemo: React.FC = () => {
           </li>
         ))}
       </ul>
+      {/* <input type="file" accept=".xlsx, .xls" onChange={handleImport} />
+      <div
+        dangerouslySetInnerHTML={{ __html: htmlContent }}
+        style={{ marginTop: "20px" }}
+      /> */}
     </div>
   );
 };
