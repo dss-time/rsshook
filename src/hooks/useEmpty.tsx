@@ -7,11 +7,18 @@ import { useMemo } from "react";
 
 const useIsEmpty = (value: any): boolean => {
   return useMemo(() => {
-    if (value === false) return false;
-
     if (value === null || value === undefined) return true;
 
-    if (typeof value === "string") return value.trim() === "";
+    const valueType = typeof value;
+
+    if (valueType === "boolean") return false;
+
+    if (valueType === "number") return Number.isNaN(value);
+
+    if (valueType === "bigint" || valueType === "symbol" || valueType === "function")
+      return false;
+
+    if (valueType === "string") return value.trim() === "";
 
     if (Array.isArray(value)) return value.length === 0;
 
@@ -21,13 +28,11 @@ const useIsEmpty = (value: any): boolean => {
 
     if (value instanceof Map || value instanceof Set) return value.size === 0;
 
-    if (typeof value === "object") {
-      return Object.keys(value).constructor !== Object
-        ? Object.keys(value).length === 0
-        : Object.keys(value).length === 0;
+    if (valueType === "object") {
+      return Object.keys(value).length === 0;
     }
 
-    return true;
+    return false;
   }, [value]);
 };
 
