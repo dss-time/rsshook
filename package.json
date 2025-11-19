@@ -1,6 +1,6 @@
 {
   "name": "rsshook",
-  "version": "1.1.17",
+  "version": "1.1.18",
   "description": "react-hook",
   "main": "index.js",
   "scripts": {
