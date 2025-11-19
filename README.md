@@ -1,5 +1,3 @@
-# Project Name
-
 # 📦 rsshook
 
 A lightweight and practical collection of React Hooks that provides commonly used utilities to help you build React applications more efficiently and elegantly.
