@@ -1,9 +1,3 @@
-/**
- * 控制并发执行的任务池（跨框架通用）
- * @param tasks  任务数组（每个任务是无参函数，返回 Promise）
- * @param maxConcurrency 最大并发数
- * @param onProgress 可选：进度回调 (finished, total)
- */
 export async function concurrencyPool<T>(
   tasks: (() => Promise<T>)[],
   maxConcurrency: number,
@@ -14,33 +8,33 @@ export async function concurrencyPool<T>(
   }
 
   const total = tasks.length;
+  const results: T[] = new Array(total);
   let finished = 0;
-  const results: T[] = [];
-  const executing: Promise<void>[] = [];
+  let currentIndex = 0;
 
-  const runTask = (task: () => Promise<T>) =>
-    Promise.resolve().then(async () => {
+  const worker = async () => {
+    while (true) {
+      const taskIndex = currentIndex++;
+      if (taskIndex >= total) break;
+
       try {
-        const res = await task();
-        results.push(res);
+        const res = await tasks[taskIndex]();
+        results[taskIndex] = res;
       } catch (err) {
-        results.push(err as any);
+        results[taskIndex] = err as any as T;
       } finally {
         finished++;
         onProgress?.(finished, total);
       }
-    });
-
-  for (const task of tasks) {
-    const p = runTask(task);
-    executing.push(p);
-
-    if (executing.length >= maxConcurrency) {
-      await Promise.race(executing);
-      executing.splice(executing.indexOf(p), 1);
     }
+  };
+
+  const workerCount = Math.min(maxConcurrency, total);
+  const workers: Promise<void>[] = [];
+  for (let i = 0; i < workerCount; i++) {
+    workers.push(worker());
   }
 
-  await Promise.all(executing);
+  await Promise.all(workers);
   return results;
 }
