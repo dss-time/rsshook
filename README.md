@@ -1,37 +1,53 @@
 # Project Name
 
-rsshook
+# 📦 rsshook
 
-## Table of Contents
+A lightweight and practical collection of React Hooks that provides commonly used utilities to help you build React applications more efficiently and elegantly.
 
-- [Installation](#installation)
-- [Usage](#usage)
-- [License](#license)
+---
 
-## Installation
+## 🚀 Installation
 
-```coffeescript
-yarn add rsshook  or  npm i rsshook
+Install using **yarn** or **npm**:
+
+```bash
+yarn add rsshook
+# or
+npm install rsshook
 ```
 
-## Usage
+📘 Usage
+🧩 useIsEmpty
+Check whether a value is empty ("" | null | undefined | [] | {} and more).
 
 ```tsx
-import { useIsEmpty } from "rsshook";
+import { useIsEmpty } from 'rsshook';
 
-const isEmpty = "";
-const result = useIsEmpty(isEmpty);
-console.log(result); //true
+const App = () => {
+  const value = '';
+  const isEmpty = useIsEmpty(value);
+
+  console.log(isEmpty); // true
+
+  return <div>{isEmpty ? 'Empty' : 'Not Empty'}</div>;
+};
 ```
 
-## License
+## 📄License
 
-MIT
+MIT License © 2025
+Fully open source. Free to use, modify, and contribute.
 
-## Help
+## 💬 Support
 
-email：d1667494390@gmail.com
+If you need help, suggestions, or want to report issues:
+
+📧 Email: d1667494390@gmail.com
 
 ## Keywords
 
-react hook
+react
+react-hooks
+javascript
+typescript
+rsshook
