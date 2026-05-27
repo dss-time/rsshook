@@ -3,7 +3,7 @@ import react from '@vitejs/plugin-react';
 import dts from 'vite-plugin-dts';
 import { resolve } from 'path';
 
-const externalPackages = ['react', 'react-dom', 'antd', 'axios', 'xlsx'];
+const externalPackages = ['react', 'react-dom', 'vue', 'antd', 'axios', 'xlsx'];
 
 export default defineConfig({
   plugins: [
@@ -22,7 +22,58 @@ export default defineConfig({
     lib: {
       entry: {
         index: resolve(__dirname, 'src/index.ts'),
+        core: resolve(__dirname, 'src/core/index.ts'),
+        react: resolve(__dirname, 'src/react/index.ts'),
+        vue: resolve(__dirname, 'src/vue/index.ts'),
         file: resolve(__dirname, 'src/utils/file/validateFile.ts'),
+
+        reactUseBrowserInfo: resolve(__dirname, 'src/react/useBrowserInfo.ts'),
+        reactUseCheckUpdate: resolve(__dirname, 'src/react/useCheckUpdate.ts'),
+        reactUseConcurrencyPool: resolve(
+          __dirname,
+          'src/react/useConcurrencyPool.ts'
+        ),
+        reactUseConcurrencyPoolPro: resolve(
+          __dirname,
+          'src/react/useConcurrencyPoolPro.ts'
+        ),
+        reactUseDebounce: resolve(__dirname, 'src/react/useDebounce.ts'),
+        reactUseEmpty: resolve(__dirname, 'src/react/useEmpty.ts'),
+        reactUseExcel: resolve(__dirname, 'src/react/useExcel.ts'),
+        reactUseExpandCollapse: resolve(
+          __dirname,
+          'src/react/useExpandCollapse.ts'
+        ),
+        reactUseKeyboard: resolve(__dirname, 'src/react/useKeyboard.ts'),
+        reactUseMobileStyle: resolve(__dirname, 'src/react/useMobileStyle.ts'),
+        reactUseOnlineStatus: resolve(__dirname, 'src/react/useOnlineStatus.ts'),
+        reactUseSearchHistory: resolve(
+          __dirname,
+          'src/react/useSearchHistory.ts'
+        ),
+
+        vueUseBrowserInfo: resolve(__dirname, 'src/vue/useBrowserInfo.ts'),
+        vueUseCheckUpdate: resolve(__dirname, 'src/vue/useCheckUpdate.ts'),
+        vueUseConcurrencyPool: resolve(
+          __dirname,
+          'src/vue/useConcurrencyPool.ts'
+        ),
+        vueUseConcurrencyPoolPro: resolve(
+          __dirname,
+          'src/vue/useConcurrencyPoolPro.ts'
+        ),
+        vueUseDebounce: resolve(__dirname, 'src/vue/useDebounce.ts'),
+        vueUseEmpty: resolve(__dirname, 'src/vue/useEmpty.ts'),
+        vueUseExcel: resolve(__dirname, 'src/vue/useExcel.ts'),
+        vueUseExpandCollapse: resolve(
+          __dirname,
+          'src/vue/useExpandCollapse.ts'
+        ),
+        vueUseKeyboard: resolve(__dirname, 'src/vue/useKeyboard.ts'),
+        vueUseMobileStyle: resolve(__dirname, 'src/vue/useMobileStyle.ts'),
+        vueUseOnlineStatus: resolve(__dirname, 'src/vue/useOnlineStatus.ts'),
+        vueUseSearchHistory: resolve(__dirname, 'src/vue/useSearchHistory.ts'),
+
         useBrowserInfo: resolve(__dirname, 'src/hooks/useBrowserInfo.tsx'),
         useCheckUpdate: resolve(__dirname, 'src/utils/check/useCheckUpdate.tsx'),
         useConcurrencyPool: resolve(__dirname, 'src/hooks/useConcurrencyPool.tsx'),
@@ -47,6 +98,9 @@ export default defineConfig({
     rollupOptions: {
       external: id =>
         externalPackages.some(pkg => id === pkg || id.startsWith(`${pkg}/`)),
+      output: {
+        exports: 'named',
+      },
     },
     sourcemap: false,
     minify: 'esbuild',

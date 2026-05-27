@@ -11,10 +11,145 @@
       "import": "./dist/index.mjs",
       "require": "./dist/index.cjs"
     },
+    "./core": {
+      "types": "./dist/core.d.ts",
+      "import": "./dist/core.mjs",
+      "require": "./dist/core.cjs"
+    },
+    "./react": {
+      "types": "./dist/react.d.ts",
+      "import": "./dist/react.mjs",
+      "require": "./dist/react.cjs"
+    },
+    "./vue": {
+      "types": "./dist/vue.d.ts",
+      "import": "./dist/vue.mjs",
+      "require": "./dist/vue.cjs"
+    },
     "./file": {
       "types": "./dist/file.d.ts",
       "import": "./dist/file.mjs",
       "require": "./dist/file.cjs"
+    },
+    "./react/useBrowserInfo": {
+      "types": "./dist/reactUseBrowserInfo.d.ts",
+      "import": "./dist/reactUseBrowserInfo.mjs",
+      "require": "./dist/reactUseBrowserInfo.cjs"
+    },
+    "./react/useCheckUpdate": {
+      "types": "./dist/reactUseCheckUpdate.d.ts",
+      "import": "./dist/reactUseCheckUpdate.mjs",
+      "require": "./dist/reactUseCheckUpdate.cjs"
+    },
+    "./react/useConcurrencyPool": {
+      "types": "./dist/reactUseConcurrencyPool.d.ts",
+      "import": "./dist/reactUseConcurrencyPool.mjs",
+      "require": "./dist/reactUseConcurrencyPool.cjs"
+    },
+    "./react/useConcurrencyPoolPro": {
+      "types": "./dist/reactUseConcurrencyPoolPro.d.ts",
+      "import": "./dist/reactUseConcurrencyPoolPro.mjs",
+      "require": "./dist/reactUseConcurrencyPoolPro.cjs"
+    },
+    "./react/useDebounce": {
+      "types": "./dist/reactUseDebounce.d.ts",
+      "import": "./dist/reactUseDebounce.mjs",
+      "require": "./dist/reactUseDebounce.cjs"
+    },
+    "./react/useEmpty": {
+      "types": "./dist/reactUseEmpty.d.ts",
+      "import": "./dist/reactUseEmpty.mjs",
+      "require": "./dist/reactUseEmpty.cjs"
+    },
+    "./react/useExcel": {
+      "types": "./dist/reactUseExcel.d.ts",
+      "import": "./dist/reactUseExcel.mjs",
+      "require": "./dist/reactUseExcel.cjs"
+    },
+    "./react/useExpandCollapse": {
+      "types": "./dist/reactUseExpandCollapse.d.ts",
+      "import": "./dist/reactUseExpandCollapse.mjs",
+      "require": "./dist/reactUseExpandCollapse.cjs"
+    },
+    "./react/useKeyboard": {
+      "types": "./dist/reactUseKeyboard.d.ts",
+      "import": "./dist/reactUseKeyboard.mjs",
+      "require": "./dist/reactUseKeyboard.cjs"
+    },
+    "./react/useMobileStyle": {
+      "types": "./dist/reactUseMobileStyle.d.ts",
+      "import": "./dist/reactUseMobileStyle.mjs",
+      "require": "./dist/reactUseMobileStyle.cjs"
+    },
+    "./react/useOnlineStatus": {
+      "types": "./dist/reactUseOnlineStatus.d.ts",
+      "import": "./dist/reactUseOnlineStatus.mjs",
+      "require": "./dist/reactUseOnlineStatus.cjs"
+    },
+    "./react/useSearchHistory": {
+      "types": "./dist/reactUseSearchHistory.d.ts",
+      "import": "./dist/reactUseSearchHistory.mjs",
+      "require": "./dist/reactUseSearchHistory.cjs"
+    },
+    "./vue/useBrowserInfo": {
+      "types": "./dist/vueUseBrowserInfo.d.ts",
+      "import": "./dist/vueUseBrowserInfo.mjs",
+      "require": "./dist/vueUseBrowserInfo.cjs"
+    },
+    "./vue/useCheckUpdate": {
+      "types": "./dist/vueUseCheckUpdate.d.ts",
+      "import": "./dist/vueUseCheckUpdate.mjs",
+      "require": "./dist/vueUseCheckUpdate.cjs"
+    },
+    "./vue/useConcurrencyPool": {
+      "types": "./dist/vueUseConcurrencyPool.d.ts",
+      "import": "./dist/vueUseConcurrencyPool.mjs",
+      "require": "./dist/vueUseConcurrencyPool.cjs"
+    },
+    "./vue/useConcurrencyPoolPro": {
+      "types": "./dist/vueUseConcurrencyPoolPro.d.ts",
+      "import": "./dist/vueUseConcurrencyPoolPro.mjs",
+      "require": "./dist/vueUseConcurrencyPoolPro.cjs"
+    },
+    "./vue/useDebounce": {
+      "types": "./dist/vueUseDebounce.d.ts",
+      "import": "./dist/vueUseDebounce.mjs",
+      "require": "./dist/vueUseDebounce.cjs"
+    },
+    "./vue/useEmpty": {
+      "types": "./dist/vueUseEmpty.d.ts",
+      "import": "./dist/vueUseEmpty.mjs",
+      "require": "./dist/vueUseEmpty.cjs"
+    },
+    "./vue/useExcel": {
+      "types": "./dist/vueUseExcel.d.ts",
+      "import": "./dist/vueUseExcel.mjs",
+      "require": "./dist/vueUseExcel.cjs"
+    },
+    "./vue/useExpandCollapse": {
+      "types": "./dist/vueUseExpandCollapse.d.ts",
+      "import": "./dist/vueUseExpandCollapse.mjs",
+      "require": "./dist/vueUseExpandCollapse.cjs"
+    },
+    "./vue/useKeyboard": {
+      "types": "./dist/vueUseKeyboard.d.ts",
+      "import": "./dist/vueUseKeyboard.mjs",
+      "require": "./dist/vueUseKeyboard.cjs"
+    },
+    "./vue/useMobileStyle": {
+      "types": "./dist/vueUseMobileStyle.d.ts",
+      "import": "./dist/vueUseMobileStyle.mjs",
+      "require": "./dist/vueUseMobileStyle.cjs"
+    },
+    "./vue/useOnlineStatus": {
+      "types": "./dist/vueUseOnlineStatus.d.ts",
+      "import": "./dist/vueUseOnlineStatus.mjs",
+      "require": "./dist/vueUseOnlineStatus.cjs"
+    },
+    "./vue/useSearchHistory": {
+      "types": "./dist/vueUseSearchHistory.d.ts",
+      "import": "./dist/vueUseSearchHistory.mjs",
+      "require": "./dist/vueUseSearchHistory.cjs"
     },
     "./useBrowserInfo": {
       "types": "./dist/hooks/useBrowserInfo.d.ts",
@@ -98,6 +233,7 @@
     "axios": ">=1",
     "react": ">=18",
     "react-dom": ">=18",
+    "vue": ">=3",
     "xlsx": ">=0.18"
   },
   "peerDependenciesMeta": {
@@ -107,7 +243,13 @@
     "axios": {
       "optional": true
     },
+    "react": {
+      "optional": true
+    },
     "react-dom": {
+      "optional": true
+    },
+    "vue": {
       "optional": true
     },
     "xlsx": {
@@ -132,6 +274,7 @@
     "typescript": "^5.0.2",
     "vite": "^4.4.5",
     "vite-plugin-dts": "^3.5.2",
+    "vue": "^3.4.0",
     "xlsx": "^0.18.5"
   }
 }
