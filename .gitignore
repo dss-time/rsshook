@@ -41,13 +41,15 @@ tmp/
 logs
 
 # Yarn
-/yarn-error.log
-/yarn.lock
-/yarn-debug.log*
+yarn-error.log
+yarn.lock
+yarn-debug.log*
 
+# Keep package-lock.json (project uses npm)
+# Don't ignore package-lock.json as it's needed for dependency resolution
 
-#Package.json
-/package-lock.json
+# Vite
+.vite/
 
 # Runtime data
 pids

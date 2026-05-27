@@ -26,6 +26,7 @@ declare namespace BMap {
 
   interface IconOptions {
     anchor?: Size;
+    imageSize?: Size;
     imageOffset?: Size;
     infoWindowAnchor?: Size;
     printImageUrl?: string;

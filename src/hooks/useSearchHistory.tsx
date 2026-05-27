@@ -1,64 +1,77 @@
-import { useEffect } from "react";
-import { useState } from "react";
-/**
+import { useEffect, useState } from "react";
 
-@see maxRecords 8条搜索数据(8 search results)
-@see maxDays 最多保存七天(Save for up to seven days)
+export interface SearchHistoryRecord {
+  value: string;
+  time: string;
+}
 
-*/
-const useSearchHistory = (maxRecords = 8, maxDays = 7) => {
-  const [searchHistory, setSearchHistory] = useState(() => {
-    const history = localStorage.getItem("searchHistory");
-    if (history) {
-      return JSON.parse(history);
-    }
+const STORAGE_KEY = "searchHistory";
+
+const canUseStorage = () => typeof window !== "undefined" && !!window.localStorage;
+
+const readHistory = (): SearchHistoryRecord[] => {
+  if (!canUseStorage()) return [];
+
+  try {
+    const history = window.localStorage.getItem(STORAGE_KEY);
+    return history ? JSON.parse(history) : [];
+  } catch {
     return [];
-  });
+  }
+};
 
-  const setSearchValue = (value: any) => {
-    if (!value.trim()) {
+const writeHistory = (history: SearchHistoryRecord[]) => {
+  if (!canUseStorage()) return;
+  window.localStorage.setItem(STORAGE_KEY, JSON.stringify(history));
+};
+
+const useSearchHistory = (maxRecords = 8, maxDays = 7) => {
+  const [searchHistory, setSearchHistory] = useState<SearchHistoryRecord[]>(readHistory);
+
+  const setSearchValue = (value: string) => {
+    const searchValue = value.trim();
+
+    if (!searchValue) {
       return;
     }
 
-    setSearchHistory((prevHistory: any) => {
-      const recordIndex = prevHistory.findIndex(
-        (record: any) => record.value === value
-      );
+    setSearchHistory(prevHistory => {
+      const recordIndex = prevHistory.findIndex(record => record.value === searchValue);
 
       const newHistory = [...prevHistory];
       if (recordIndex !== -1) {
         newHistory.splice(recordIndex, 1);
       }
 
-      newHistory.unshift({ value, time: new Date() });
+      newHistory.unshift({ value: searchValue, time: new Date().toISOString() });
 
       if (newHistory.length > maxRecords) {
         newHistory.pop();
       }
 
-      localStorage.setItem("searchHistory", JSON.stringify(newHistory));
+      writeHistory(newHistory);
 
       return newHistory;
     });
   };
 
-  const removeSearchValue = (value: any) => {
-    setSearchHistory((prevHistory: any) => {
-      const newHistory = prevHistory.filter(
-        (record: any) => record.value !== value
-      );
-      localStorage.setItem("searchHistory", JSON.stringify(newHistory));
+  const removeSearchValue = (value: string) => {
+    setSearchHistory(prevHistory => {
+      const newHistory = prevHistory.filter(record => record.value !== value);
+      writeHistory(newHistory);
       return newHistory;
     });
   };
 
   const handleClearHistory = () => {
-    localStorage.removeItem("searchHistory");
+    if (canUseStorage()) {
+      window.localStorage.removeItem(STORAGE_KEY);
+    }
     setSearchHistory([]);
   };
 
   useEffect(() => {
-    setSearchHistory((prevHistory: any[]) => {
+    setSearchHistory(prevHistory => {
       const currentTime = Date.now();
 
       const newHistory = prevHistory.filter(
@@ -68,7 +81,7 @@ const useSearchHistory = (maxRecords = 8, maxDays = 7) => {
           maxDays
       );
 
-      localStorage.setItem("searchHistory", JSON.stringify(newHistory));
+      writeHistory(newHistory);
 
       return newHistory;
     });

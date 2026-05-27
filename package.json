@@ -1,23 +1,137 @@
 {
   "name": "rsshook",
-  "version": "2.2.1",
+  "version": "2.2.2",
   "description": "react-hook",
-  "main": "index.js",
+  "main": "./dist/index.cjs",
+  "module": "./dist/index.mjs",
+  "types": "./dist/index.d.ts",
+  "exports": {
+    ".": {
+      "types": "./dist/index.d.ts",
+      "import": "./dist/index.mjs",
+      "require": "./dist/index.cjs"
+    },
+    "./file": {
+      "types": "./dist/file.d.ts",
+      "import": "./dist/file.mjs",
+      "require": "./dist/file.cjs"
+    },
+    "./useBrowserInfo": {
+      "types": "./dist/hooks/useBrowserInfo.d.ts",
+      "import": "./dist/useBrowserInfo.mjs",
+      "require": "./dist/useBrowserInfo.cjs"
+    },
+    "./useCheckUpdate": {
+      "types": "./dist/utils/check/useCheckUpdate.d.ts",
+      "import": "./dist/useCheckUpdate.mjs",
+      "require": "./dist/useCheckUpdate.cjs"
+    },
+    "./useConcurrencyPool": {
+      "types": "./dist/hooks/useConcurrencyPool.d.ts",
+      "import": "./dist/useConcurrencyPool.mjs",
+      "require": "./dist/useConcurrencyPool.cjs"
+    },
+    "./useConcurrencyPoolPro": {
+      "types": "./dist/hooks/useConcurrencyPoolPro.d.ts",
+      "import": "./dist/useConcurrencyPoolPro.mjs",
+      "require": "./dist/useConcurrencyPoolPro.cjs"
+    },
+    "./useDebounce": {
+      "types": "./dist/hooks/useDebounce.d.ts",
+      "import": "./dist/useDebounce.mjs",
+      "require": "./dist/useDebounce.cjs"
+    },
+    "./useEmpty": {
+      "types": "./dist/hooks/useEmpty.d.ts",
+      "import": "./dist/useEmpty.mjs",
+      "require": "./dist/useEmpty.cjs"
+    },
+    "./useExcel": {
+      "types": "./dist/hooks/useExcel.d.ts",
+      "import": "./dist/useExcel.mjs",
+      "require": "./dist/useExcel.cjs"
+    },
+    "./useExpandCollapse": {
+      "types": "./dist/hooks/useExpandCollapse.d.ts",
+      "import": "./dist/useExpandCollapse.mjs",
+      "require": "./dist/useExpandCollapse.cjs"
+    },
+    "./useKeyboard": {
+      "types": "./dist/hooks/useKeyboard.d.ts",
+      "import": "./dist/useKeyboard.mjs",
+      "require": "./dist/useKeyboard.cjs"
+    },
+    "./useMobileStyle": {
+      "types": "./dist/hooks/useMobileStyle.d.ts",
+      "import": "./dist/useMobileStyle.mjs",
+      "require": "./dist/useMobileStyle.cjs"
+    },
+    "./useOnlineStatus": {
+      "types": "./dist/hooks/useOnlineStatus.d.ts",
+      "import": "./dist/useOnlineStatus.mjs",
+      "require": "./dist/useOnlineStatus.cjs"
+    },
+    "./useSearchHistory": {
+      "types": "./dist/hooks/useSearchHistory.d.ts",
+      "import": "./dist/useSearchHistory.mjs",
+      "require": "./dist/useSearchHistory.cjs"
+    }
+  },
+  "files": [
+    "dist"
+  ],
+  "sideEffects": [
+    "**/*.css"
+  ],
   "scripts": {
-    "test": "echo \"Error: no test specified\" && exit 1"
+    "dev": "vite",
+    "build": "tsc --noEmit && vite build",
+    "preview": "vite preview",
+    "lint": "eslint src --ext .ts,.tsx --fix",
+    "format": "prettier --write \"src/**/*.{ts,tsx,json,css,md}\"",
+    "type-check": "tsc --noEmit"
   },
   "author": "dss",
   "license": "MIT",
-  "dependencies": {
-    "antd": "^5.17.4",
-    "axios": "1.8.2",
-    "lodash": "^4.17.21",
-    "react": "^18.2.0",
-    "uuid": "^10.0.0",
-    "xlsx": "^0.18.5"
+  "peerDependencies": {
+    "antd": ">=5",
+    "axios": ">=1",
+    "react": ">=18",
+    "react-dom": ">=18",
+    "xlsx": ">=0.18"
+  },
+  "peerDependenciesMeta": {
+    "antd": {
+      "optional": true
+    },
+    "axios": {
+      "optional": true
+    },
+    "react-dom": {
+      "optional": true
+    },
+    "xlsx": {
+      "optional": true
+    }
   },
   "devDependencies": {
     "@types/node": "^20.12.7",
-    "@types/react": "^18.0.20"
+    "@types/react": "^18.0.20",
+    "@types/react-dom": "^18.2.7",
+    "@typescript-eslint/eslint-plugin": "^6.0.0",
+    "@typescript-eslint/parser": "^6.0.0",
+    "@vitejs/plugin-react": "^4.0.0",
+    "eslint": "^8.45.0",
+    "eslint-plugin-react": "^7.32.2",
+    "eslint-plugin-react-hooks": "^4.6.0",
+    "antd": "^5.17.4",
+    "axios": "^1.8.0",
+    "prettier": "^3.0.0",
+    "react": "^18.2.0",
+    "react-dom": "^18.2.0",
+    "typescript": "^5.0.2",
+    "vite": "^4.4.5",
+    "vite-plugin-dts": "^3.5.2",
+    "xlsx": "^0.18.5"
   }
 }
