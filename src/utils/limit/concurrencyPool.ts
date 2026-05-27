@@ -1,7 +1,7 @@
 export async function concurrencyPool<T>(
   tasks: (() => Promise<T>)[],
   maxConcurrency: number,
-  onProgress?: (finished: number, total: number) => void,
+  onProgress?: (finished: number, total: number) => void
 ): Promise<T[]> {
   if (!Array.isArray(tasks)) {
     throw new Error('tasks 必须为函数数组');
@@ -21,7 +21,8 @@ export async function concurrencyPool<T>(
         const res = await tasks[taskIndex]();
         results[taskIndex] = res;
       } catch (err) {
-        results[taskIndex] = err as any as T;
+        // 保持错误类型，不进行不安全的类型转换
+        throw err;
       } finally {
         finished++;
         onProgress?.(finished, total);

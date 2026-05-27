@@ -1,10 +1,8 @@
-// @ts-nocheck
-
 import { message } from "antd";
 
 //百度地图的加载器，需要在html中的header中引入脚本文件加上申请的百度地图的key
 const BMapModule = (() => {
-  let map = null;
+  let map: BMap.Map | null = null;
   /**
    * 坐标常量说明：
    * COORDINATES_WGS84 = 1, WGS84坐标
@@ -15,20 +13,20 @@ const BMapModule = (() => {
    * COORDINATES_BD09_MC = 6，百度bd09墨卡托坐标
    * COORDINATES_MAPBAR = 7，mapbar地图坐标
    * COORDINATES_51 = 8，51地图坐标
-   */
+  */
 
   //私有函数，模块内部使用
-  const _bmapConvert = point => {
-    const translateCallback = data => {
+  const _bmapConvert = (point: BMap.Point) => {
+    const translateCallback = (data: { status: number; points: BMap.Point[] }) => {
       if (data.status === 0) {
-        const marker = new BMap.Marker(data.points[0]);
-        map.addOverlay(marker);
-        map.setCenter(data.points[0]);
+        const marker = new window.BMap.Marker(data.points[0]);
+        map?.addOverlay(marker);
+        map?.setCenter(data.points[0]);
       }
     };
 
     setTimeout(() => {
-      const convertor = new BMap.Convertor();
+      const convertor = new window.BMap.Convertor();
       const pointArr = [point];
       convertor.translate(pointArr, 3, 5, translateCallback);
     }, 500);
@@ -47,7 +45,7 @@ const BMapModule = (() => {
    * @param {string} lng -经度
    * @param {string} lat - 纬度
    */
-  const initializeMap = (id, lng, lat) => {
+  const initializeMap = (id: string | HTMLElement, lng: number, lat: number) => {
     if (!_isOnline()) return;
 
     const BMap = window.BMap;
@@ -66,7 +64,6 @@ const BMapModule = (() => {
   const destroyMap = () => {
     if (map) {
       map.clearOverlays();
-      map.reset();
       map = null;
     }
   };
