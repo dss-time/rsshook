@@ -1,9 +1,5 @@
 import { useState, useEffect } from "react";
-
-type MobileStyle = {
-  mobileWidth: string;
-  mobileHeight: string;
-};
+import { getMobileStyle, MobileStyle } from "../core/mobileStyle";
 
 const useMobileStyle = (): MobileStyle => {
   const [mobileStyle, setMobileStyle] = useState<MobileStyle>({
@@ -12,20 +8,7 @@ const useMobileStyle = (): MobileStyle => {
   });
 
   useEffect(() => {
-    const mobileAgents = [
-      "Android",
-      "iPhone",
-      "SymbianOS",
-      "Windows Phone",
-      "iPad",
-      "iPod",
-      "HarmonyOS",
-    ];
-    const userAgentInfo = navigator.userAgent;
-    const isMobile = mobileAgents.some(agent => userAgentInfo.includes(agent));
-    if (isMobile) {
-      setMobileStyle({ mobileWidth: "100vmax", mobileHeight: "100vmin" });
-    }
+    setMobileStyle(getMobileStyle(navigator.userAgent));
   }, []);
 
   return mobileStyle;

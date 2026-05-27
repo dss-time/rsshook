@@ -1,6 +1,6 @@
 # rsshook
 
-A small React hooks and browser utilities library.
+A small React, Vue 3, and framework-agnostic utilities library.
 
 ## Installation
 
@@ -12,10 +12,14 @@ yarn add rsshook
 pnpm add rsshook
 ```
 
-React is a peer dependency:
+Install the peer dependency for the framework you use:
 
 ```bash
+# React
 npm install react react-dom
+
+# Vue 3
+npm install vue
 ```
 
 Some APIs need extra peer dependencies only when you use them:
@@ -24,7 +28,7 @@ Some APIs need extra peer dependencies only when you use them:
 # useExcel
 npm install xlsx
 
-# useCheckUpdate, SearchHistory component, ExpandCollapse component, BMap helpers
+# React useCheckUpdate, SearchHistory component, ExpandCollapse component, BMap helpers
 npm install antd
 
 # createHttpRequest
@@ -33,16 +37,31 @@ npm install axios
 
 ## Import
 
-Recommended: use subpath imports so unused optional dependencies are not required.
+Recommended: use framework-specific subpath imports so unused optional dependencies
+are not required.
 
 ```tsx
-import useDebounce from 'rsshook/useDebounce';
-import useIsEmpty from 'rsshook/useEmpty';
+// React
+import useDebounce from 'rsshook/react/useDebounce';
+import useIsEmpty from 'rsshook/react/useEmpty';
+
+// Vue 3
+import useVueDebounce from 'rsshook/vue/useDebounce';
+
+// Framework-agnostic utilities
 import { validateFile, FileTypes } from 'rsshook/file';
 ```
 
-You can also import from the root entry when your app already has all peer
-dependencies installed:
+Grouped entries are also available:
+
+```ts
+import { useDebounce } from 'rsshook/react';
+import { useDebounce as useVueDebounce } from 'rsshook/vue';
+import { isEmpty, validateFile } from 'rsshook/core';
+```
+
+Legacy root imports are still supported for React users when your app already
+has all peer dependencies installed:
 
 ```tsx
 import { useDebounce, useIsEmpty } from 'rsshook';
@@ -50,26 +69,81 @@ import { useDebounce, useIsEmpty } from 'rsshook';
 
 ## Hooks
 
-| Hook | Description |
-| --- | --- |
-| `useDebounce` | Return a debounced value after a delay. |
-| `useEmpty` / `useIsEmpty` | Check whether a value is empty. |
-| `useOnlineStatus` | Track browser online/offline status. |
-| `useSearchHistory` | Store and manage search keywords in `localStorage`. |
-| `useExpandCollapse` | Collapse long text or React content and toggle expansion. |
-| `useKeyboard` | Bind a keyboard shortcut such as `ctrl+s`. |
-| `useBrowserInfo` | Read browser and device information from `userAgent`. |
-| `useMobileStyle` | Return mobile viewport style values for mobile devices. |
-| `useExcel` | Import/export Excel files. Requires `xlsx`. |
-| `useConcurrencyPool` | Run async tasks with a simple concurrency limit. |
-| `useConcurrencyPoolPro` | Run async tasks with pause, resume, cancel, retry and timeout. |
-| `useCheckUpdate` | Check whether the deployed page version changed. Requires `antd`. |
+| Hook | React import | Vue import | Description |
+| --- | --- | --- | --- |
+| `useDebounce` | `rsshook/react/useDebounce` | `rsshook/vue/useDebounce` | Return a debounced value after a delay. |
+| `useEmpty` / `useIsEmpty` | `rsshook/react/useEmpty` | `rsshook/vue/useEmpty` | Check whether a value is empty. |
+| `useOnlineStatus` | `rsshook/react/useOnlineStatus` | `rsshook/vue/useOnlineStatus` | Track browser online/offline status. |
+| `useSearchHistory` | `rsshook/react/useSearchHistory` | `rsshook/vue/useSearchHistory` | Store and manage search keywords in `localStorage`. |
+| `useExpandCollapse` | `rsshook/react/useExpandCollapse` | `rsshook/vue/useExpandCollapse` | Collapse long text and toggle expansion. |
+| `useKeyboard` | `rsshook/react/useKeyboard` | `rsshook/vue/useKeyboard` | Bind a keyboard shortcut such as `ctrl+s`. |
+| `useBrowserInfo` | `rsshook/react/useBrowserInfo` | `rsshook/vue/useBrowserInfo` | Read browser and device information from `userAgent`. |
+| `useMobileStyle` | `rsshook/react/useMobileStyle` | `rsshook/vue/useMobileStyle` | Return mobile viewport style values for mobile devices. |
+| `useExcel` | `rsshook/react/useExcel` | `rsshook/vue/useExcel` | Import/export Excel files. Requires `xlsx`. |
+| `useConcurrencyPool` | `rsshook/react/useConcurrencyPool` | `rsshook/vue/useConcurrencyPool` | Run async tasks with a simple concurrency limit. |
+| `useConcurrencyPoolPro` | `rsshook/react/useConcurrencyPoolPro` | `rsshook/vue/useConcurrencyPoolPro` | Run async tasks with pause, resume, cancel, retry and timeout. |
+| `useCheckUpdate` | `rsshook/react/useCheckUpdate` | `rsshook/vue/useCheckUpdate` | Check whether the deployed page version changed. |
+
+## Vue 3 Quick Start
+
+```vue
+<script setup lang="ts">
+import { ref } from 'vue';
+import useDebounce from 'rsshook/vue/useDebounce';
+import useOnlineStatus from 'rsshook/vue/useOnlineStatus';
+import useSearchHistory from 'rsshook/vue/useSearchHistory';
+
+const keyword = ref('');
+const debouncedKeyword = useDebounce(keyword, 300);
+const isOnline = useOnlineStatus();
+
+const {
+  searchHistory,
+  setSearchValue,
+  removeSearchValue,
+  handleClearHistory,
+} = useSearchHistory(8, 7);
+</script>
+
+<template>
+  <input v-model="keyword" @keyup.enter="setSearchValue(keyword)" />
+  <p>{{ isOnline ? 'Online' : 'Offline' }}</p>
+  <p>Debounced: {{ debouncedKeyword }}</p>
+
+  <button
+    v-for="record in searchHistory"
+    :key="record.value"
+    @click="removeSearchValue(record.value)"
+  >
+    {{ record.value }}
+  </button>
+
+  <button @click="handleClearHistory">Clear</button>
+</template>
+```
+
+Vue values are returned as `ref` / `computed` values.
+
+## Core Utilities
+
+`rsshook/core` contains utilities that do not depend on React or Vue:
+
+```ts
+import {
+  concurrencyPool,
+  getBrowserInfo,
+  getMobileStyle,
+  isEmpty,
+  validateFile,
+  FileTypes,
+} from 'rsshook/core';
+```
 
 ## useDebounce
 
 ```tsx
 import { useState } from 'react';
-import useDebounce from 'rsshook/useDebounce';
+import useDebounce from 'rsshook/react/useDebounce';
 
 function SearchBox() {
   const [keyword, setKeyword] = useState('');
@@ -90,7 +164,7 @@ function SearchBox() {
 ## useEmpty / useIsEmpty
 
 ```tsx
-import useIsEmpty from 'rsshook/useEmpty';
+import useIsEmpty from 'rsshook/react/useEmpty';
 
 function Example() {
   const isEmpty = useIsEmpty([]);
@@ -111,7 +185,7 @@ import { useEmpty, useIsEmpty } from 'rsshook';
 ## useOnlineStatus
 
 ```tsx
-import useOnlineStatus from 'rsshook/useOnlineStatus';
+import useOnlineStatus from 'rsshook/react/useOnlineStatus';
 
 function NetworkState() {
   const isOnline = useOnlineStatus();
@@ -125,7 +199,7 @@ It listens to the browser `online` and `offline` events.
 ## useSearchHistory
 
 ```tsx
-import useSearchHistory from 'rsshook/useSearchHistory';
+import useSearchHistory from 'rsshook/react/useSearchHistory';
 
 function Search() {
   const {
@@ -160,7 +234,7 @@ The hook stores data under `localStorage.searchHistory`.
 ## useExpandCollapse
 
 ```tsx
-import { useExpandCollapse } from 'rsshook/useExpandCollapse';
+import { useExpandCollapse } from 'rsshook/react/useExpandCollapse';
 
 function ArticlePreview({ content }: { content: string }) {
   const {
@@ -189,7 +263,7 @@ It accepts `ReactNode` content and calculates text length from children.
 
 ```tsx
 import { useCallback } from 'react';
-import useKeyboard from 'rsshook/useKeyboard';
+import useKeyboard from 'rsshook/react/useKeyboard';
 
 function Editor() {
   const save = useCallback(() => {
@@ -215,7 +289,7 @@ useKeyboard('ctrl+shift+p', openPalette);
 ## useBrowserInfo
 
 ```tsx
-import useBrowserInfo from 'rsshook/useBrowserInfo';
+import useBrowserInfo from 'rsshook/react/useBrowserInfo';
 
 function BrowserPanel() {
   const info = useBrowserInfo() as {
@@ -237,7 +311,7 @@ The initial value is `{}` and is filled after the component mounts.
 ## useMobileStyle
 
 ```tsx
-import useMobileStyle from 'rsshook/useMobileStyle';
+import useMobileStyle from 'rsshook/react/useMobileStyle';
 
 function MobileContainer() {
   const mobileStyle = useMobileStyle();
@@ -270,7 +344,7 @@ npm install xlsx
 ```
 
 ```tsx
-import { useExcel } from 'rsshook/useExcel';
+import { useExcel } from 'rsshook/react/useExcel';
 
 interface UserRow {
   name: string;
@@ -316,7 +390,7 @@ Returned functions:
 ## useConcurrencyPool
 
 ```tsx
-import { useConcurrencyPool } from 'rsshook/useConcurrencyPool';
+import { useConcurrencyPool } from 'rsshook/react/useConcurrencyPool';
 
 function TaskRunner() {
   const pool = useConcurrencyPool<string>(3);
@@ -353,7 +427,7 @@ Returned fields:
 ## useConcurrencyPoolPro
 
 ```tsx
-import { useConcurrencyPool as useConcurrencyPoolPro } from 'rsshook/useConcurrencyPoolPro';
+import { useConcurrencyPool as useConcurrencyPoolPro } from 'rsshook/react/useConcurrencyPoolPro';
 
 function UploadQueue() {
   const pool = useConcurrencyPoolPro(2);
@@ -419,7 +493,7 @@ npm install antd
 ```
 
 ```tsx
-import useCheckUpdate from 'rsshook/useCheckUpdate';
+import useCheckUpdate from 'rsshook/react/useCheckUpdate';
 
 function App() {
   useCheckUpdate();
