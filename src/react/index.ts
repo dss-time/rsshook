@@ -20,3 +20,5 @@ export type { UseCheckUpdateOptions } from '../utils/check/useCheckUpdate';
 
 export { default as ExpandCollapse } from '../components/ExpandCollapse/ExpandCollapse';
 export { default as SearchHistory } from '../components/Search/SearchHistory';
+export * from '../core';
+export * from './dom';

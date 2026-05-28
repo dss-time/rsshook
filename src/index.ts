@@ -29,3 +29,4 @@ export { WebSocketManager } from './utils/webSocket/webSocket';
 
 export { default as ExpandCollapse } from './components/ExpandCollapse/ExpandCollapse';
 export { default as SearchHistory } from './components/Search/SearchHistory';
+export * from './core';
