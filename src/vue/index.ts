@@ -12,3 +12,5 @@ export type { AddTaskOptions, TaskFn } from './useConcurrencyPoolPro';
 export { default as useExcel } from './useExcel';
 export { default as useCheckUpdate } from './useCheckUpdate';
 export type { UseCheckUpdateOptions } from './useCheckUpdate';
+export * from '../core';
+export * from './dom';
