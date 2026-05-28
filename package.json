@@ -1,6 +1,6 @@
 {
   "name": "rsshook",
-  "version": "2.2.4",
+  "version": "3.0.0",
   "description": "react-hook",
   "main": "./dist/index.cjs",
   "module": "./dist/index.mjs",
