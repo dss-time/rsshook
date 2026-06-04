@@ -1,3 +1,5 @@
+import { writeTextToClipboard } from '../../shared/clipboard';
+
 /**
  * Rich text content copied to clipboard.
  */
@@ -11,27 +13,6 @@ export interface CopyRichTextOptions {
    */
   html: string;
 }
-
-const fallbackWriteText = async (text: string) => {
-  if (typeof window === 'undefined') {
-    return false;
-  }
-
-  try {
-    if (
-      typeof navigator !== 'undefined' &&
-      navigator.clipboard &&
-      typeof navigator.clipboard.writeText === 'function'
-    ) {
-      await navigator.clipboard.writeText(text);
-      return true;
-    }
-  } catch {
-    return false;
-  }
-
-  return false;
-};
 
 /**
  * Copy rich text to clipboard with both text/html and text/plain payloads.
@@ -69,7 +50,7 @@ export async function copyRichText(
     // Fall back to plain text copy below.
   }
 
-  return fallbackWriteText(text);
+  return writeTextToClipboard(text);
 }
 
 /**

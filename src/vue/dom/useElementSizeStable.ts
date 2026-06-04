@@ -1,4 +1,5 @@
 import { onMounted, onUnmounted, ref, unref, type Ref } from 'vue';
+import { readElementSize } from '../../shared/dom';
 import type { MaybeRef } from './useScrollBoundary';
 
 export type { MaybeRef } from './useScrollBoundary';
@@ -28,11 +29,6 @@ export interface ElementSize {
   width: Ref<number>;
   height: Ref<number>;
 }
-
-const readSize = (element: HTMLElement) => ({
-  width: element.offsetWidth,
-  height: element.offsetHeight,
-});
 
 /**
  * Observe element size changes with debounced stable updates.
@@ -65,7 +61,7 @@ export function useElementSizeStable(
     let observer: ResizeObserver | undefined;
 
     const commitSize = () => {
-      const nextSize = readSize(element);
+      const nextSize = readElementSize(element);
 
       if (width.value !== nextSize.width) {
         width.value = nextSize.width;

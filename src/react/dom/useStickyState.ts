@@ -1,4 +1,5 @@
 import { useEffect, useState, type RefObject } from 'react';
+import { readStickyState } from '../../shared/dom';
 
 /**
  * Options for detecting sticky state.
@@ -22,17 +23,6 @@ export interface UseStickyStateOptions {
 export interface StickyState {
   isSticky: boolean;
 }
-
-const getStickyState = (
-  element: HTMLElement,
-  top: number,
-  root?: HTMLElement | null
-) => {
-  const rect = element.getBoundingClientRect();
-  const rootTop = root ? root.getBoundingClientRect().top : 0;
-
-  return rect.top <= rootTop + top;
-};
 
 /**
  * Detect whether an element has reached its sticky top position.
@@ -62,7 +52,7 @@ export function useStickyState(
     let observer: IntersectionObserver | undefined;
 
     const update = () => {
-      const nextValue = getStickyState(element, top, root);
+      const nextValue = readStickyState(element, top, root);
       setIsSticky(prevValue => (prevValue === nextValue ? prevValue : nextValue));
     };
 

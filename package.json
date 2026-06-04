@@ -1,7 +1,7 @@
 {
   "name": "rsshook",
   "version": "3.0.0",
-  "description": "react-hook",
+  "description": "React, Vue 3, and framework-agnostic TypeScript utilities",
   "main": "./dist/index.cjs",
   "module": "./dist/index.mjs",
   "types": "./dist/index.d.ts",

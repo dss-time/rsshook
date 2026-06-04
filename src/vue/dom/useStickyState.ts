@@ -1,4 +1,5 @@
 import { onMounted, onUnmounted, ref, unref, type Ref } from 'vue';
+import { readStickyState } from '../../shared/dom';
 import type { MaybeRef } from './useScrollBoundary';
 
 export type { MaybeRef } from './useScrollBoundary';
@@ -25,17 +26,6 @@ export interface UseStickyStateOptions {
 export interface StickyState {
   isSticky: Ref<boolean>;
 }
-
-const getStickyState = (
-  element: HTMLElement,
-  top: number,
-  root?: HTMLElement | null
-) => {
-  const rect = element.getBoundingClientRect();
-  const rootTop = root ? root.getBoundingClientRect().top : 0;
-
-  return rect.top <= rootTop + top;
-};
 
 /**
  * Detect whether an element has reached its sticky top position.
@@ -67,7 +57,7 @@ export function useStickyState(
     let observer: IntersectionObserver | undefined;
 
     const update = () => {
-      const nextValue = getStickyState(element, top, rootElement);
+      const nextValue = readStickyState(element, top, rootElement);
 
       if (isSticky.value !== nextValue) {
         isSticky.value = nextValue;
