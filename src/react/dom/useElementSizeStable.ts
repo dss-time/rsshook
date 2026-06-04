@@ -1,4 +1,10 @@
 import { useEffect, useRef, useState, type RefObject } from 'react';
+import {
+  DEFAULT_ELEMENT_SIZE,
+  isSameElementSize,
+  readElementSize,
+  type ElementSizeSnapshot,
+} from '../../shared/dom';
 
 /**
  * Options for observing stable element size.
@@ -21,20 +27,7 @@ export interface UseElementSizeStableOptions {
 /**
  * Element size.
  */
-export interface ElementSize {
-  width: number;
-  height: number;
-}
-
-const DEFAULT_SIZE: ElementSize = {
-  width: 0,
-  height: 0,
-};
-
-const readSize = (element: HTMLElement): ElementSize => ({
-  width: element.offsetWidth,
-  height: element.offsetHeight,
-});
+export interface ElementSize extends ElementSizeSnapshot {}
 
 /**
  * Observe element size changes with debounced stable updates.
@@ -48,7 +41,7 @@ export function useElementSizeStable(
   options: UseElementSizeStableOptions = {}
 ): ElementSize {
   const { debounce = 100, immediate = true } = options;
-  const [size, setSize] = useState<ElementSize>(DEFAULT_SIZE);
+  const [size, setSize] = useState<ElementSize>(DEFAULT_ELEMENT_SIZE);
   const timerRef = useRef<ReturnType<typeof setTimeout>>();
 
   useEffect(() => {
@@ -65,11 +58,9 @@ export function useElementSizeStable(
     let observer: ResizeObserver | undefined;
 
     const commitSize = () => {
-      const nextSize = readSize(element);
+      const nextSize = readElementSize(element);
       setSize(prevSize =>
-        prevSize.width === nextSize.width && prevSize.height === nextSize.height
-          ? prevSize
-          : nextSize
+        isSameElementSize(prevSize, nextSize) ? prevSize : nextSize
       );
     };
 

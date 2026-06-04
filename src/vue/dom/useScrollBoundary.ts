@@ -1,4 +1,9 @@
 import { onMounted, onUnmounted, ref, unref, type Ref } from 'vue';
+import {
+  readElementScrollBoundary,
+  readWindowScrollBoundary,
+  type ScrollBoundarySnapshot,
+} from '../../shared/dom';
 
 /**
  * Vue value or ref value.
@@ -39,54 +44,6 @@ export interface ScrollBoundaryState {
   clientWidth: Ref<number>;
 }
 
-const readWindowState = (threshold: number) => {
-  const doc = document.documentElement;
-  const body = document.body;
-  const scrollTop = window.scrollY || doc.scrollTop || body.scrollTop || 0;
-  const scrollLeft = window.scrollX || doc.scrollLeft || body.scrollLeft || 0;
-  const scrollHeight = Math.max(doc.scrollHeight, body.scrollHeight);
-  const scrollWidth = Math.max(doc.scrollWidth, body.scrollWidth);
-  const clientHeight = window.innerHeight || doc.clientHeight;
-  const clientWidth = window.innerWidth || doc.clientWidth;
-
-  return {
-    isTop: scrollTop <= threshold,
-    isBottom: scrollTop + clientHeight >= scrollHeight - threshold,
-    isLeft: scrollLeft <= threshold,
-    isRight: scrollLeft + clientWidth >= scrollWidth - threshold,
-    scrollTop,
-    scrollLeft,
-    scrollHeight,
-    scrollWidth,
-    clientHeight,
-    clientWidth,
-  };
-};
-
-const readElementState = (element: HTMLElement, threshold: number) => {
-  const {
-    scrollTop,
-    scrollLeft,
-    scrollHeight,
-    scrollWidth,
-    clientHeight,
-    clientWidth,
-  } = element;
-
-  return {
-    isTop: scrollTop <= threshold,
-    isBottom: scrollTop + clientHeight >= scrollHeight - threshold,
-    isLeft: scrollLeft <= threshold,
-    isRight: scrollLeft + clientWidth >= scrollWidth - threshold,
-    scrollTop,
-    scrollLeft,
-    scrollHeight,
-    scrollWidth,
-    clientHeight,
-    clientWidth,
-  };
-};
-
 /**
  * Detect whether a scroll container has reached each scroll boundary.
  *
@@ -111,7 +68,7 @@ export function useScrollBoundary(
   const clientWidth = ref(0);
   let cleanup: (() => void) | undefined;
 
-  const updateRefs = (state: ReturnType<typeof readWindowState>) => {
+  const updateRefs = (state: ScrollBoundarySnapshot) => {
     if (isTop.value !== state.isTop) isTop.value = state.isTop;
     if (isBottom.value !== state.isBottom) isBottom.value = state.isBottom;
     if (isLeft.value !== state.isLeft) isLeft.value = state.isLeft;
@@ -145,8 +102,8 @@ export function useScrollBoundary(
     const update = () => {
       updateRefs(
         targetType === 'window'
-          ? readWindowState(threshold)
-          : readElementState(scrollTarget as HTMLElement, threshold)
+          ? readWindowScrollBoundary(threshold)
+          : readElementScrollBoundary(scrollTarget as HTMLElement, threshold)
       );
     };
 
