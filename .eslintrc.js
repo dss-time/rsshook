@@ -7,7 +7,7 @@ module.exports = {
   },
   extends: [
     'eslint:recommended',
-    '@typescript-eslint/recommended',
+    'plugin:@typescript-eslint/recommended',
     'plugin:react/recommended',
     'plugin:react-hooks/recommended',
   ],
@@ -22,6 +22,13 @@ module.exports = {
   },
   plugins: ['react', '@typescript-eslint'],
   rules: {
+    // Retry loops intentionally run until success or a thrown error.
+    'no-constant-condition': ['error', { checkLoops: false }],
+    // Public interfaces stay open to declaration merging.
+    '@typescript-eslint/no-empty-object-type': [
+      'error',
+      { allowInterfaces: 'with-single-extends' },
+    ],
     'react/react-in-jsx-scope': 'off',
     '@typescript-eslint/no-explicit-any': 'warn',
     '@typescript-eslint/no-unused-vars': 'warn',

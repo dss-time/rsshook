@@ -1,4 +1,4 @@
-import { useEffect, useState } from "react";
+import { useEffect, useState } from 'react';
 import {
   SearchHistoryRecord,
   addSearchHistoryRecord,
@@ -7,40 +7,41 @@ import {
   readSearchHistory,
   removeSearchHistoryRecord,
   writeSearchHistory,
-} from "../core/searchHistory";
+} from '../core/searchHistory';
 
 const useSearchHistory = (maxRecords = 8, maxDays = 7) => {
   const [searchHistory, setSearchHistory] =
     useState<SearchHistoryRecord[]>(readSearchHistory);
 
   const setSearchValue = (value: string) => {
-    setSearchHistory(prevHistory => {
-      const nextHistory = addSearchHistoryRecord(prevHistory, value, maxRecords);
-      writeSearchHistory(nextHistory);
-      return nextHistory;
-    });
+    setSearchHistory(prevHistory =>
+      addSearchHistoryRecord(prevHistory, value, maxRecords)
+    );
   };
 
   const removeSearchValue = (value: string) => {
-    setSearchHistory(prevHistory => {
-      const nextHistory = removeSearchHistoryRecord(prevHistory, value);
-      writeSearchHistory(nextHistory);
-      return nextHistory;
-    });
+    setSearchHistory(prevHistory =>
+      removeSearchHistoryRecord(prevHistory, value)
+    );
   };
 
   const handleClearHistory = () => {
-    clearSearchHistory();
     setSearchHistory([]);
   };
 
   useEffect(() => {
-    setSearchHistory(prevHistory => {
-      const nextHistory = filterExpiredSearchHistory(prevHistory, maxDays);
-      writeSearchHistory(nextHistory);
-      return nextHistory;
-    });
+    setSearchHistory(prevHistory =>
+      filterExpiredSearchHistory(prevHistory, maxDays)
+    );
   }, [maxDays]);
+
+  useEffect(() => {
+    if (searchHistory.length === 0) {
+      clearSearchHistory();
+    } else {
+      writeSearchHistory(searchHistory);
+    }
+  }, [searchHistory]);
 
   return {
     searchHistory,

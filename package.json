@@ -220,11 +220,12 @@
   ],
   "scripts": {
     "dev": "vite",
-    "build": "tsc --noEmit && vite build",
+    "build": "npm run type-check && vite build",
     "preview": "vite preview",
-    "lint": "eslint src --ext .ts,.tsx --fix",
+    "lint": "eslint src --ext .ts,.tsx",
     "format": "prettier --write \"src/**/*.{ts,tsx,json,css,md}\"",
-    "type-check": "tsc --noEmit"
+    "type-check": "tsc --noEmit && tsc --noEmit -p tsconfig.node.json",
+    "lint:fix": "eslint src --ext .ts,.tsx --fix"
   },
   "author": "dss",
   "license": "MIT",
@@ -257,24 +258,31 @@
     }
   },
   "devDependencies": {
-    "@types/node": "^20.12.7",
+    "@types/node": "^20.19.43",
     "@types/react": "^18.0.20",
     "@types/react-dom": "^18.2.7",
-    "@typescript-eslint/eslint-plugin": "^6.0.0",
-    "@typescript-eslint/parser": "^6.0.0",
-    "@vitejs/plugin-react": "^4.0.0",
-    "eslint": "^8.45.0",
-    "eslint-plugin-react": "^7.32.2",
-    "eslint-plugin-react-hooks": "^4.6.0",
+    "@typescript-eslint/eslint-plugin": "^8.72.0",
+    "@typescript-eslint/parser": "^8.72.0",
+    "@vitejs/plugin-react": "^6.1.2",
     "antd": "^5.17.4",
     "axios": "^1.8.0",
+    "eslint": "^8.57.1",
+    "eslint-plugin-react": "^7.32.2",
+    "eslint-plugin-react-hooks": "^4.6.0",
     "prettier": "^3.0.0",
     "react": "^18.2.0",
     "react-dom": "^18.2.0",
-    "typescript": "^5.0.2",
-    "vite": "^4.4.5",
-    "vite-plugin-dts": "^3.5.2",
+    "typescript": "~6.0.3",
+    "vite": "^8.3.5",
+    "vite-plugin-dts": "^5.1.2",
     "vue": "^3.4.0",
     "xlsx": "^0.18.5"
+  },
+  "devEngines": {
+    "runtime": {
+      "name": "node",
+      "version": "^20.19.0 || >=22.12.0",
+      "onFail": "error"
+    }
   }
 }

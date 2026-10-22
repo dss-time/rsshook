@@ -42,7 +42,7 @@ export function useElementSizeStable(
 ): ElementSize {
   const { debounce = 100, immediate = true } = options;
   const [size, setSize] = useState<ElementSize>(DEFAULT_ELEMENT_SIZE);
-  const timerRef = useRef<ReturnType<typeof setTimeout>>();
+  const timerRef = useRef<ReturnType<typeof setTimeout> | undefined>(undefined);
 
   useEffect(() => {
     if (typeof window === 'undefined') {

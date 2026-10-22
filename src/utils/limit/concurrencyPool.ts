@@ -20,9 +20,6 @@ export async function concurrencyPool<T>(
       try {
         const res = await tasks[taskIndex]();
         results[taskIndex] = res;
-      } catch (err) {
-        // 保持错误类型，不进行不安全的类型转换
-        throw err;
       } finally {
         finished++;
         onProgress?.(finished, total);

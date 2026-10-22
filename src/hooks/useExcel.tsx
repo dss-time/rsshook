@@ -60,7 +60,7 @@ export function useExcel<T>(): UseExcelReturn<T> {
           const worksheet = workbook.Sheets[firstSheetName];
           const htmlString = XLSX.utils.sheet_to_html(worksheet);
           resolve(htmlString);
-        } catch (error) {
+        } catch {
           reject(new Error("文件解析失败，请检查文件格式"));
         }
       };

@@ -2,6 +2,25 @@
 
 A small React, Vue 3, and framework-agnostic utilities library.
 
+React hooks support React 18 and 19, including StrictMode. Browser hooks are
+client-side hooks; `useOnlineStatus` also provides a stable server snapshot.
+
+## Development
+
+Building this repository requires Node.js 20.19+ (20.x) or 22.12+ and npm.
+This requirement applies to the development toolchain, not browser consumers.
+
+```bash
+npm ci
+npm run type-check
+npm run build
+npm run lint
+```
+
+The toolchain uses Vite 8 and TypeScript 6.0 for compatibility with declaration
+generation and ESLint. In VS Code, select **TypeScript: Select TypeScript Version**
+and **Use Workspace Version** to use the project's compiler.
+
 ## Installation
 
 ```bash
@@ -958,6 +977,10 @@ Returned fields:
 - `results`: successful task results.
 - `isRunning`: whether the pool has active work.
 
+On unmount, queued and running task promises reject and the pool stops scheduling.
+Already running functions cannot be forcibly stopped in the basic pool. Handle
+rejections from `addTask`, including cancellation during unmount.
+
 ## useConcurrencyPoolPro
 
 ```tsx
@@ -1017,6 +1040,11 @@ Task options:
 - `retry`: retry count after failure.
 - `retryDelay`: delay between retries in milliseconds.
 - `timeout`: task timeout in milliseconds.
+
+Delayed retries count toward `pendingCount` and can be cancelled with `cancel`
+or `clearQueue`. On unmount, the pool clears its timers, aborts running task
+signals, and rejects unfinished task promises. Tasks must honor `AbortSignal` to
+stop their underlying work; handle rejections from `add`.
 
 ## useCheckUpdate
 

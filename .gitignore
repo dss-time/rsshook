@@ -1,5 +1,77 @@
+# Dependencies and package-manager caches
+node_modules/
+.npm/
+.pnpm-store/
+.yarn/cache/
+.yarn/unplugged/
+.yarn/install-state.gz
+.pnp.*
 
-# OSX
+# This repository uses npm; keep its lock file under version control.
+yarn.lock
+!/package-lock.json
+
+# Build output and generated package archives
+/dist/
+/build/
+*.tgz
+*.tsbuildinfo
+
+# Vite, lint and other tool caches
+.vite/
+.vite-temp/
+.cache/
+.eslintcache
+.stylelintcache
+.prettiercache
+vite.config.*.timestamp-*
+
+# Test and coverage output
+coverage/
+.nyc_output/
+playwright-report/
+test-results/
+
+# Local environment files; keep shareable examples
+.env
+.env.*
+!.env.example
+!.env.*.example
+!.env.sample
+!.env.*.sample
+*.local
+
+# Logs and temporary runtime files
+*.log
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*
+pnpm-debug.log*
+logs/
+tmp/
+temp/
+pids/
+*.pid
+*.seed
+*.pid.lock
+
+# Editor-local files; keep useful shared VS Code configuration
+.idea/
+.vscode/*
+!.vscode/settings.json
+!.vscode/extensions.json
+!.vscode/tasks.json
+!.vscode/launch.json
+*.iml
+*.suo
+*.ntvs*
+*.njsproj
+*.sln
+*.swp
+*.swo
+*~
+
+# macOS
 .DS_Store
 .AppleDouble
 .LSOverride
@@ -17,45 +89,3 @@ $RECYCLE.BIN/
 *.msi
 *.msm
 *.msp
-
-# Editors
-.idea/
-*.iml
-*.suo
-*.ntvs*
-*.njsproj
-*.sln
-
-# Node.js
-node_modules/
-npm-debug.log*
-
-# NPM Packages
-npm-debug.log*
-*.tgz
-dist/
-
-# Standard
-tmp/
-*.log
-logs
-
-# Yarn
-yarn-error.log
-yarn.lock
-yarn-debug.log*
-
-# Keep package-lock.json (project uses npm)
-# Don't ignore package-lock.json as it's needed for dependency resolution
-
-# Vite
-.vite/
-
-# Runtime data
-pids
-*.pid
-*.seed
-*.pid.lock
-
-# Coverage directory used by tools like istanbul
-coverage

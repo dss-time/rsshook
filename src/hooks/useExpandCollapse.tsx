@@ -1,4 +1,4 @@
-import { ReactNode, useState } from "react";
+import { isValidElement, ReactNode, useState } from 'react';
 /**
 @example content 是传入的文本或元素(content is the passed text or HTMLElement )
 
@@ -8,12 +8,12 @@ export const useExpandCollapse = (content: ReactNode, maxLength: number) => {
   const [isExpanded, setIsExpanded] = useState(false);
 
   const getTextContent = (node: ReactNode): string => {
-    if (typeof node === "string") return node;
-    if (Array.isArray(node)) return node.map(getTextContent).join("");
-    if (typeof node === "object" && node !== null && "props" in node) {
+    if (typeof node === 'string') return node;
+    if (Array.isArray(node)) return node.map(getTextContent).join('');
+    if (isValidElement<{ children?: ReactNode }>(node)) {
       return getTextContent(node.props.children);
     }
-    return "";
+    return '';
   };
 
   const text = getTextContent(content);
@@ -26,7 +26,7 @@ export const useExpandCollapse = (content: ReactNode, maxLength: number) => {
     );
 
   const toggleVisibility = () => {
-    setIsExpanded(!isExpanded);
+    setIsExpanded(expanded => !expanded);
   };
 
   const shouldHideControl = text.length <= maxLength;

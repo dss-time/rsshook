@@ -1,27 +1,22 @@
-import React from "react";
+import { useSyncExternalStore } from 'react';
 
-const getOnLineStatus = () =>
-  typeof navigator !== "undefined" && typeof navigator.onLine === "boolean"
+const getOnlineStatus = () =>
+  typeof navigator !== 'undefined' && typeof navigator.onLine === 'boolean'
     ? navigator.onLine
     : true;
 
-const useOnlineStatus = () => {
-  const [status, setStatus] = React.useState(getOnLineStatus());
+const getServerSnapshot = () => true;
 
-  const setOnline = () => setStatus(true);
-  const setOffline = () => setStatus(false);
-
-  React.useEffect(() => {
-    window.addEventListener("online", setOnline);
-    window.addEventListener("offline", setOffline);
-
-    return () => {
-      window.removeEventListener("online", setOnline);
-      window.removeEventListener("offline", setOffline);
-    };
-  }, []);
-
-  return status;
+const subscribe = (onChange: () => void) => {
+  window.addEventListener('online', onChange);
+  window.addEventListener('offline', onChange);
+  return () => {
+    window.removeEventListener('online', onChange);
+    window.removeEventListener('offline', onChange);
+  };
 };
+
+const useOnlineStatus = () =>
+  useSyncExternalStore(subscribe, getOnlineStatus, getServerSnapshot);
 
 export default useOnlineStatus;

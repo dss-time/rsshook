@@ -1,4 +1,4 @@
-import { useCallback, useMemo, useRef, useState } from 'react';
+import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 
 // 单个任务函数：可以返回 Promise 或同步值，支持 AbortSignal
 export type TaskFn<T = any> = (signal?: AbortSignal) => Promise<T> | T;
@@ -23,6 +23,7 @@ interface InternalTask<T = any> {
   };
   attempt: number; // 当前已经尝试的次数（从 0 开始）
   controller: AbortController;
+  cleanup?: () => void;
 }
 
 // Hook 返回的 Pool 对象类型
@@ -54,7 +55,7 @@ const DEFAULT_TIMEOUT = 0;
 let globalTaskId = 0;
 
 export function useConcurrencyPool(
-  initialConcurrency: number = 5,
+  initialConcurrency: number = 5
 ): ConcurrencyPool {
   // 这些是暴露给组件使用的 UI 状态
   const [activeCount, setActiveCount] = useState(0);
@@ -71,144 +72,193 @@ export function useConcurrencyPool(
   const runningRef = useRef(false);
 
   const queueRef = useRef<InternalTask[]>([]);
-  const runningMapRef = useRef<Map<string, InternalTask>>(new Map());
+  const runningTasksRef = useRef(new Set<InternalTask>());
+
+  const retryTasksRef = useRef(
+    new Map<InternalTask, ReturnType<typeof setTimeout>>()
+  );
+  const mountedRef = useRef(true);
 
   // 同步 ref -> state（做“快照”，用于 UI 展示）
   const syncState = useCallback(() => {
+    if (!mountedRef.current) return;
     setActiveCount(activeCountRef.current);
-    setPendingCount(queueRef.current.length);
+    setPendingCount(queueRef.current.length + retryTasksRef.current.size);
     setCompleted(completedRef.current);
     setIsPaused(pausedRef.current);
     setIsRunning(runningRef.current);
   }, []);
 
-  // 核心：执行单个任务（含 retry / timeout / cancel）
-  const runTask = useCallback(
-    (task: InternalTask) => {
-      const { controller } = task;
-      const { timeout, retry, retryDelay } = task.options;
+  useEffect(() => {
+    mountedRef.current = true;
+    syncState();
+    const runningTasks = runningTasksRef.current;
+    const retryTasks = retryTasksRef.current;
+    return () => {
+      mountedRef.current = false;
+      const tasks = new Set([
+        ...queueRef.current,
+        ...runningTasks,
+        ...retryTasks.keys(),
+      ]);
+      retryTasks.forEach(timer => clearTimeout(timer));
+      retryTasks.clear();
+      queueRef.current = [];
+      runningTasks.clear();
+      activeCountRef.current = 0;
+      runningRef.current = false;
+      tasks.forEach(task => {
+        task.cleanup?.();
+        task.controller.abort();
+        task.reject(new Error('Task cancelled (unmount)'));
+      });
+    };
+  }, [syncState]);
 
-      // 将任务加入 runningMap，用于取消
-      runningMapRef.current.set(task.id, task);
-
-      const exec = () =>
-        Promise.resolve().then(() => task.fn(controller.signal));
-
-      let p: Promise<any> = exec();
-
-      // 包一层 timeout
-      if (timeout > 0) {
-        p = Promise.race([
-          p,
-          new Promise((_, reject) => {
-            const timer = setTimeout(() => {
-              if (!controller.signal.aborted) {
-                reject(new Error('Task timeout'));
-              }
-            }, timeout);
-
-            controller.signal.addEventListener('abort', () => {
-              clearTimeout(timer);
-            });
-          }),
-        ]);
+  // 调度器：尝试从队列中拉任务执行
+  const runNext = useCallback(
+    function runNext() {
+      if (!mountedRef.current || pausedRef.current) {
+        return;
       }
 
-      p.then(
-        (value) => {
-          // 成功
-          activeCountRef.current--;
-          completedRef.current++;
-          runningMapRef.current.delete(task.id);
+      const runTask = (task: InternalTask) => {
+        const { controller } = task;
+        const { timeout, retry, retryDelay } = task.options;
 
-          task.resolve(value);
-          runningRef.current =
-            activeCountRef.current > 0 || queueRef.current.length > 0;
-          syncState();
-          runNext(); // 继续下一个
-        },
-        (error) => {
-          // 处理取消
-          if (controller.signal.aborted) {
+        // 跟踪任务实例，用于取消和隔离已卸载的任务
+        runningTasksRef.current.add(task);
+
+        let timer: ReturnType<typeof setTimeout> | undefined;
+        let onAbort: () => void;
+        const p = new Promise<any>((resolve, reject) => {
+          onAbort = () => reject(new Error('Task cancelled'));
+          controller.signal.addEventListener('abort', onAbort, { once: true });
+          if (timeout > 0) {
+            timer = setTimeout(
+              () => reject(new Error('Task timeout')),
+              timeout
+            );
+          }
+          Promise.resolve()
+            .then(() => {
+              if (controller.signal.aborted) throw new Error('Task cancelled');
+              return task.fn(controller.signal);
+            })
+            .then(resolve, reject);
+        });
+        task.cleanup = () => {
+          clearTimeout(timer);
+          controller.signal.removeEventListener('abort', onAbort);
+        };
+
+        p.then(
+          value => {
+            task.cleanup?.();
+            if (!runningTasksRef.current.has(task)) return;
+            // 成功
             activeCountRef.current--;
             completedRef.current++;
-            runningMapRef.current.delete(task.id);
+            runningTasksRef.current.delete(task);
 
-            task.reject(error);
+            task.resolve(value);
             runningRef.current =
-              activeCountRef.current > 0 || queueRef.current.length > 0;
+              activeCountRef.current > 0 ||
+              queueRef.current.length > 0 ||
+              retryTasksRef.current.size > 0;
             syncState();
-            runNext();
-            return;
-          }
+            runNext(); // 继续下一个
+          },
+          error => {
+            task.cleanup?.();
+            if (!runningTasksRef.current.has(task)) return;
+            // 处理取消
+            if (controller.signal.aborted) {
+              activeCountRef.current--;
+              completedRef.current++;
+              runningTasksRef.current.delete(task);
 
-          // 处理重试
-          if (task.attempt < retry) {
-            task.attempt++;
+              task.reject(error);
+              runningRef.current =
+                activeCountRef.current > 0 ||
+                queueRef.current.length > 0 ||
+                retryTasksRef.current.size > 0;
+              syncState();
+              runNext();
+              return;
+            }
 
-            activeCountRef.current--; // 当前这次占用的并发释放
-            runningMapRef.current.delete(task.id);
-            runningRef.current =
-              activeCountRef.current > 0 || queueRef.current.length > 0;
-            syncState();
+            // 处理重试
+            if (task.attempt < retry) {
+              task.attempt++;
 
-            // 延迟重试
-            setTimeout(() => {
-              queueRef.current.push(task);
+              activeCountRef.current--; // 当前这次占用的并发释放
+              runningTasksRef.current.delete(task);
+
+              // 延迟重试
+              const retryTimer = setTimeout(() => {
+                retryTasksRef.current.delete(task);
+                queueRef.current.push(task);
+                runningRef.current = true;
+                syncState();
+                runNext();
+              }, retryDelay);
+              retryTasksRef.current.set(task, retryTimer);
               runningRef.current = true;
               syncState();
               runNext();
-            }, retryDelay);
 
-            return;
+              return;
+            }
+
+            // 最终失败
+            activeCountRef.current--;
+            completedRef.current++;
+            runningTasksRef.current.delete(task);
+
+            task.reject(error);
+            runningRef.current =
+              activeCountRef.current > 0 ||
+              queueRef.current.length > 0 ||
+              retryTasksRef.current.size > 0;
+            syncState();
+            runNext();
           }
+        );
+      };
 
-          // 最终失败
-          activeCountRef.current--;
-          completedRef.current++;
-          runningMapRef.current.delete(task.id);
+      const concurrency = concurrencyRef.current;
 
-          task.reject(error);
-          runningRef.current =
-            activeCountRef.current > 0 || queueRef.current.length > 0;
-          syncState();
-          runNext();
-        },
-      );
+      while (
+        activeCountRef.current < concurrency &&
+        queueRef.current.length > 0 &&
+        !pausedRef.current
+      ) {
+        const task = queueRef.current.shift()!;
+        activeCountRef.current++;
+        runningRef.current = true;
+        syncState();
+        runTask(task);
+      }
+
+      // 队列空了，且没有运行中的任务 → 不再 running
+      if (
+        queueRef.current.length === 0 &&
+        activeCountRef.current === 0 &&
+        retryTasksRef.current.size === 0
+      ) {
+        runningRef.current = false;
+        syncState();
+      }
     },
-    [syncState],
+    [syncState]
   );
-
-  // 调度器：尝试从队列中拉任务执行
-  const runNext = useCallback(() => {
-    if (pausedRef.current) {
-      return;
-    }
-
-    const concurrency = concurrencyRef.current;
-
-    while (
-      activeCountRef.current < concurrency &&
-      queueRef.current.length > 0 &&
-      !pausedRef.current
-    ) {
-      const task = queueRef.current.shift()!;
-      activeCountRef.current++;
-      runningRef.current = true;
-      syncState();
-      runTask(task);
-    }
-
-    // 队列空了，且没有运行中的任务 → 不再 running
-    if (queueRef.current.length === 0 && activeCountRef.current === 0) {
-      runningRef.current = false;
-      syncState();
-    }
-  }, [runTask, syncState]);
 
   // 提交任务
   const add = useCallback(
     <T,>(fn: TaskFn<T>, options?: AddTaskOptions): Promise<T> => {
+      if (!mountedRef.current)
+        return Promise.reject(new Error('Pool unmounted'));
       const {
         id = `task-${globalTaskId++}`,
         retry = DEFAULT_RETRY,
@@ -235,7 +285,7 @@ export function useConcurrencyPool(
         runNext();
       });
     },
-    [runNext, syncState],
+    [runNext, syncState]
   );
 
   // 暂停：只是不再从队列取新任务，已经在跑的不会停
@@ -249,7 +299,9 @@ export function useConcurrencyPool(
     if (!pausedRef.current) return;
     pausedRef.current = false;
     runningRef.current =
-      activeCountRef.current > 0 || queueRef.current.length > 0;
+      activeCountRef.current > 0 ||
+      queueRef.current.length > 0 ||
+      retryTasksRef.current.size > 0;
     syncState();
     runNext();
   }, [runNext, syncState]);
@@ -259,7 +311,7 @@ export function useConcurrencyPool(
     (id: string) => {
       // 先从队列中找
       const q = queueRef.current;
-      const index = q.findIndex((t) => t.id === id);
+      const index = q.findIndex(t => t.id === id);
 
       if (index !== -1) {
         const [task] = q.splice(index, 1);
@@ -267,23 +319,49 @@ export function useConcurrencyPool(
         completedRef.current++;
         task.reject(new Error('Task cancelled'));
         runningRef.current =
-          activeCountRef.current > 0 || queueRef.current.length > 0;
+          activeCountRef.current > 0 ||
+          queueRef.current.length > 0 ||
+          retryTasksRef.current.size > 0;
+        syncState();
+        return;
+      }
+
+      for (const [task, timer] of retryTasksRef.current) {
+        if (task.id !== id) continue;
+        clearTimeout(timer);
+        retryTasksRef.current.delete(task);
+        task.controller.abort();
+        completedRef.current++;
+        task.reject(new Error('Task cancelled'));
+        runningRef.current =
+          activeCountRef.current > 0 ||
+          queueRef.current.length > 0 ||
+          retryTasksRef.current.size > 0;
         syncState();
         return;
       }
 
       // 在运行中的任务里找
-      const runningTask = runningMapRef.current.get(id);
+      const runningTask = [...runningTasksRef.current].find(
+        task => task.id === id
+      );
       if (runningTask) {
         runningTask.controller.abort();
         // 真正的 reject 会在 runTask 中统一处理
       }
     },
-    [syncState],
+    [syncState]
   );
 
   // 清空等待队列（不影响正在执行的任务）
   const clearQueue = useCallback(() => {
+    retryTasksRef.current.forEach((timer, task) => {
+      clearTimeout(timer);
+      task.controller.abort();
+      completedRef.current++;
+      task.reject(new Error('Task cancelled (clearQueue)'));
+    });
+    retryTasksRef.current.clear();
     const q = queueRef.current;
     while (q.length > 0) {
       const task = q.shift()!;
@@ -292,7 +370,9 @@ export function useConcurrencyPool(
       task.reject(new Error('Task cancelled (clearQueue)'));
     }
     runningRef.current =
-      activeCountRef.current > 0 || queueRef.current.length > 0;
+      activeCountRef.current > 0 ||
+      queueRef.current.length > 0 ||
+      retryTasksRef.current.size > 0;
     syncState();
   }, [syncState]);
 
@@ -302,13 +382,10 @@ export function useConcurrencyPool(
       concurrencyRef.current = Math.max(1, n);
       runNext();
     },
-    [runNext],
+    [runNext]
   );
 
-  const total = useMemo(
-    () => activeCount + pendingCount + completed,
-    [activeCount, pendingCount, completed],
-  );
+  const total = activeCount + pendingCount + completed;
 
   // 返回一个“Pool 对象”
   const pool: ConcurrencyPool = useMemo(
@@ -339,7 +416,7 @@ export function useConcurrencyPool(
       total,
       isPaused,
       isRunning,
-    ],
+    ]
   );
 
   return pool;
