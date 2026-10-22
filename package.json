@@ -222,10 +222,12 @@
     "dev": "vite",
     "build": "npm run type-check && vite build",
     "preview": "vite preview",
-    "lint": "eslint src --ext .ts,.tsx",
+    "lint": "eslint src packages/excel/src --ext .ts,.tsx",
     "format": "prettier --write \"src/**/*.{ts,tsx,json,css,md}\"",
     "type-check": "tsc --noEmit && tsc --noEmit -p tsconfig.node.json",
-    "lint:fix": "eslint src --ext .ts,.tsx --fix"
+    "lint:fix": "eslint src packages/excel/src --ext .ts,.tsx --fix",
+    "excel:build": "npm --prefix packages/excel run build",
+    "excel:test": "npm --prefix packages/excel test"
   },
   "author": "dss",
   "license": "MIT",

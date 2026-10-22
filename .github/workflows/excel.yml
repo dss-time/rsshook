@@ -1,0 +1,36 @@
+name: Excel package
+on:
+  pull_request:
+    paths:
+      - 'packages/excel/**'
+      - '.github/workflows/excel.yml'
+  push:
+    paths:
+      - 'packages/excel/**'
+      - '.github/workflows/excel.yml'
+permissions:
+  contents: read
+jobs:
+  excel:
+    runs-on: ubuntu-latest
+    strategy:
+      matrix:
+        react: ['18.3.1', '19.3.1']
+    defaults:
+      run:
+        working-directory: packages/excel
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+          cache: npm
+          cache-dependency-path: packages/excel/package-lock.json
+      - run: npm ci --ignore-scripts --no-audit --no-fund
+      - run: npm install --no-save --package-lock=false --ignore-scripts --no-audit --no-fund react@${{ matrix.react }} react-dom@${{ matrix.react }}
+      - run: npm test
+      - run: npm run test:package
+      - name: Check TypeScript 4.8 consumer declarations
+        run: |
+          npm install --no-save --package-lock=false --ignore-scripts --no-audit --no-fund typescript@4.8.4
+          npm run test:types

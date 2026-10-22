@@ -1130,3 +1130,15 @@ MIT
 ## Support
 
 Email: d1667494390@gmail.com
+
+## 独立 Excel 模块
+
+`packages/excel` 提供独立包 `rsshook-excel`，支持普通函数和 React 18/19 Hook，运行时不依赖 AntD、Axios、Umi 或 React DOM。
+
+支持自定义单行、分组、矩阵表头，按标题/多级路径/列位置导入，多工作表导出、模板、错误明细及取消。现有 `rsshook/useExcel` 接口继续保留。
+
+- [使用文档与接口契约](packages/excel/README.md)
+- [React 原生控件示例](packages/excel/examples/ReactExample.tsx)
+- [无框架示例](packages/excel/examples/vanilla.ts)
+
+使用 `npm install rsshook-excel@0.1.0` 安装，React Hook 从 `rsshook-excel/react` 引入。在仓库根目录执行 `npm run excel:build` 构建；测试前安装独立包开发依赖，之后执行 `npm run excel:test`。打包及宿主项目接入步骤见模块文档。
