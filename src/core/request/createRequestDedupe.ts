@@ -63,7 +63,8 @@ export function createRequestDedupe(
     cache.delete(key);
   };
 
-  const scheduleClear = (key: string) => {
+  const scheduleClear = (key: string, expected: CacheItem) => {
+    if (cache.get(key) !== expected) return;
     if (ttl === undefined) {
       clear(key);
       return;
@@ -87,18 +88,19 @@ export function createRequestDedupe(
       return cached.promise as Promise<T>;
     }
 
-    const promise = request();
-    cache.set(key, { promise });
+    const promise = Promise.resolve().then(request);
+    const item = { promise };
+    cache.set(key, item);
 
     promise.then(
       () => {
-        scheduleClear(key);
+        scheduleClear(key, item);
       },
       () => {
         if (cacheRejected) {
-          scheduleClear(key);
+          scheduleClear(key, item);
         } else {
-          clear(key);
+          if (cache.get(key) === item) clear(key);
         }
       }
     );

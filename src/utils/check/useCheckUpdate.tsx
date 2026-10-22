@@ -18,7 +18,7 @@ const DEFAULT_STORAGE_KEY = 'rsshook:version';
 const [antdMajor, antdMinor] = antdVersion.split('.').map(Number);
 // `actions` replaced `btn` in 5.24; keep older Ant Design 5 consumers working.
 const notificationActionsKey =
-  antdMajor > 5 || antdMinor >= 24 ? 'actions' : 'btn';
+  antdMajor > 5 || (antdMajor === 5 && antdMinor >= 24) ? 'actions' : 'btn';
 
 const defaultGetVersion = async () => {
   const response = await fetch(window.location.origin, {
@@ -56,6 +56,7 @@ const UpdateNotification = ({
   return contextHolder;
 };
 
+/** @deprecated UI-coupled compatibility hook. Use rsshook/react/hooks useCheckUpdate with onUpdate. */
 const useCheckUpdate = (options: UseCheckUpdateOptions = {}) => {
   const {
     interval = DEFAULT_INTERVAL,

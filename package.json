@@ -1,6 +1,6 @@
 {
   "name": "rsshook",
-  "version": "3.0.1",
+  "version": "3.1.0",
   "description": "React, Vue 3, and framework-agnostic TypeScript utilities",
   "main": "./dist/index.cjs",
   "module": "./dist/index.mjs",
@@ -210,10 +210,47 @@
       "types": "./dist/hooks/useSearchHistory.d.ts",
       "import": "./dist/useSearchHistory.mjs",
       "require": "./dist/useSearchHistory.cjs"
+    },
+    "./react/hooks": {
+      "types": "./dist/reactHooks.d.ts",
+      "import": "./dist/reactHooks.mjs",
+      "require": "./dist/reactHooks.cjs"
+    },
+    "./react/useAsyncTask": {
+      "types": "./dist/useAsyncTask.d.ts",
+      "import": "./dist/useAsyncTask.mjs",
+      "require": "./dist/useAsyncTask.cjs"
+    },
+    "./react/usePolling": {
+      "types": "./dist/usePolling.d.ts",
+      "import": "./dist/usePolling.mjs",
+      "require": "./dist/usePolling.cjs"
+    },
+    "./react/useDebounceFn": {
+      "types": "./dist/useDebounceFn.d.ts",
+      "import": "./dist/useDebounceFn.mjs",
+      "require": "./dist/useDebounceFn.cjs"
+    },
+    "./react/useRowSelection": {
+      "types": "./dist/useRowSelection.d.ts",
+      "import": "./dist/useRowSelection.mjs",
+      "require": "./dist/useRowSelection.cjs"
+    },
+    "./react/useBatchTask": {
+      "types": "./dist/useBatchTask.d.ts",
+      "import": "./dist/useBatchTask.mjs",
+      "require": "./dist/useBatchTask.cjs"
+    },
+    "./react/useUpdateCheck": {
+      "types": "./dist/useUpdateCheck.d.ts",
+      "import": "./dist/useUpdateCheck.mjs",
+      "require": "./dist/useUpdateCheck.cjs"
     }
   },
   "files": [
-    "dist"
+    "dist",
+    "docs",
+    "CHANGELOG.md"
   ],
   "sideEffects": [
     "**/*.css"
@@ -227,13 +264,15 @@
     "type-check": "tsc --noEmit && tsc --noEmit -p tsconfig.node.json",
     "lint:fix": "eslint src packages/excel/src --ext .ts,.tsx --fix",
     "excel:build": "npm --prefix packages/excel run build",
-    "excel:test": "npm --prefix packages/excel test"
+    "excel:test": "npm --prefix packages/excel test",
+    "test:hooks": "node --test tests/*.test.cjs",
+    "test:hooks:package": "node scripts/check-hooks-package.mjs"
   },
   "author": "dss",
   "license": "MIT",
   "peerDependencies": {
-    "antd": ">=5",
-    "axios": ">=1",
+    "antd": ">=4.24 <7",
+    "axios": ">=0.27 <2",
     "react": ">=18",
     "react-dom": ">=18",
     "vue": ">=3",
@@ -285,6 +324,151 @@
       "name": "node",
       "version": "^20.19.0 || >=22.12.0",
       "onFail": "error"
+    }
+  },
+  "typesVersions": {
+    "*": {
+      "core": [
+        "dist/core.d.ts"
+      ],
+      "react": [
+        "dist/react.d.ts"
+      ],
+      "vue": [
+        "dist/vue.d.ts"
+      ],
+      "file": [
+        "dist/file.d.ts"
+      ],
+      "react/useBrowserInfo": [
+        "dist/reactUseBrowserInfo.d.ts"
+      ],
+      "react/useCheckUpdate": [
+        "dist/reactUseCheckUpdate.d.ts"
+      ],
+      "react/useConcurrencyPool": [
+        "dist/reactUseConcurrencyPool.d.ts"
+      ],
+      "react/useConcurrencyPoolPro": [
+        "dist/reactUseConcurrencyPoolPro.d.ts"
+      ],
+      "react/useDebounce": [
+        "dist/reactUseDebounce.d.ts"
+      ],
+      "react/useEmpty": [
+        "dist/reactUseEmpty.d.ts"
+      ],
+      "react/useExcel": [
+        "dist/reactUseExcel.d.ts"
+      ],
+      "react/useExpandCollapse": [
+        "dist/reactUseExpandCollapse.d.ts"
+      ],
+      "react/useKeyboard": [
+        "dist/reactUseKeyboard.d.ts"
+      ],
+      "react/useMobileStyle": [
+        "dist/reactUseMobileStyle.d.ts"
+      ],
+      "react/useOnlineStatus": [
+        "dist/reactUseOnlineStatus.d.ts"
+      ],
+      "react/useSearchHistory": [
+        "dist/reactUseSearchHistory.d.ts"
+      ],
+      "vue/useBrowserInfo": [
+        "dist/vueUseBrowserInfo.d.ts"
+      ],
+      "vue/useCheckUpdate": [
+        "dist/vueUseCheckUpdate.d.ts"
+      ],
+      "vue/useConcurrencyPool": [
+        "dist/vueUseConcurrencyPool.d.ts"
+      ],
+      "vue/useConcurrencyPoolPro": [
+        "dist/vueUseConcurrencyPoolPro.d.ts"
+      ],
+      "vue/useDebounce": [
+        "dist/vueUseDebounce.d.ts"
+      ],
+      "vue/useEmpty": [
+        "dist/vueUseEmpty.d.ts"
+      ],
+      "vue/useExcel": [
+        "dist/vueUseExcel.d.ts"
+      ],
+      "vue/useExpandCollapse": [
+        "dist/vueUseExpandCollapse.d.ts"
+      ],
+      "vue/useKeyboard": [
+        "dist/vueUseKeyboard.d.ts"
+      ],
+      "vue/useMobileStyle": [
+        "dist/vueUseMobileStyle.d.ts"
+      ],
+      "vue/useOnlineStatus": [
+        "dist/vueUseOnlineStatus.d.ts"
+      ],
+      "vue/useSearchHistory": [
+        "dist/vueUseSearchHistory.d.ts"
+      ],
+      "useBrowserInfo": [
+        "dist/hooks/useBrowserInfo.d.ts"
+      ],
+      "useCheckUpdate": [
+        "dist/utils/check/useCheckUpdate.d.ts"
+      ],
+      "useConcurrencyPool": [
+        "dist/hooks/useConcurrencyPool.d.ts"
+      ],
+      "useConcurrencyPoolPro": [
+        "dist/hooks/useConcurrencyPoolPro.d.ts"
+      ],
+      "useDebounce": [
+        "dist/hooks/useDebounce.d.ts"
+      ],
+      "useEmpty": [
+        "dist/hooks/useEmpty.d.ts"
+      ],
+      "useExcel": [
+        "dist/hooks/useExcel.d.ts"
+      ],
+      "useExpandCollapse": [
+        "dist/hooks/useExpandCollapse.d.ts"
+      ],
+      "useKeyboard": [
+        "dist/hooks/useKeyboard.d.ts"
+      ],
+      "useMobileStyle": [
+        "dist/hooks/useMobileStyle.d.ts"
+      ],
+      "useOnlineStatus": [
+        "dist/hooks/useOnlineStatus.d.ts"
+      ],
+      "useSearchHistory": [
+        "dist/hooks/useSearchHistory.d.ts"
+      ],
+      "react/hooks": [
+        "dist/reactHooks.d.ts"
+      ],
+      "react/useAsyncTask": [
+        "dist/useAsyncTask.d.ts"
+      ],
+      "react/usePolling": [
+        "dist/usePolling.d.ts"
+      ],
+      "react/useDebounceFn": [
+        "dist/useDebounceFn.d.ts"
+      ],
+      "react/useRowSelection": [
+        "dist/useRowSelection.d.ts"
+      ],
+      "react/useBatchTask": [
+        "dist/useBatchTask.d.ts"
+      ],
+      "react/useUpdateCheck": [
+        "dist/useUpdateCheck.d.ts"
+      ]
     }
   }
 }

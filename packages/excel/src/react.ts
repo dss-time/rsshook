@@ -1,5 +1,11 @@
 import { useCallback, useEffect, useRef, useState } from 'react';
 import type {
+  BatchParseOptions,
+  CsvInput,
+  ImportBatchesOptions,
+  ImportReport,
+  CsvWriteOptions,
+  CsvWriteReport,
   DownloadOptions,
   ExcelInput,
   OperationOptions,
@@ -10,7 +16,8 @@ import type {
   UseExcelOptions,
 } from './types';
 import { ExcelError, asExcelError, config } from './errors';
-import { parseExcel } from './import';
+import { parseExcel, importBatches } from './import';
+import { writeCsv } from './csv-write';
 import { downloadExcel } from './browser';
 export type { UseExcelOptions, OperationState } from './types';
 
@@ -36,6 +43,14 @@ export interface UseExcelReturn<T extends object> {
   download: <R extends object = T>(
     options: DownloadOptions<R>
   ) => Promise<void>;
+  importBatches: (
+    input: CsvInput,
+    options: Partial<Omit<BatchParseOptions<T>, 'schema'>> &
+      Pick<ImportBatchesOptions<T>, 'onBatch'>
+  ) => Promise<ImportReport>;
+  writeCsv: <R extends object = T>(
+    options: CsvWriteOptions<R>
+  ) => Promise<CsvWriteReport>;
   cancel: (operation?: 'parse' | 'export' | 'all') => void;
   reset: () => void;
   parseState: OperationState;
@@ -119,6 +134,7 @@ export function useExcel<T extends object>(
     (input, overrides = {}) => {
       const defaults = latest.current.importDefaults;
       const settings = {
+        execution: latest.current.execution,
         ...defaults,
         ...overrides,
         limits: { ...defaults?.limits, ...overrides.limits },
@@ -142,6 +158,7 @@ export function useExcel<T extends object>(
     async <R extends object>(overrides: DownloadOptions<R>): Promise<void> => {
       const defaults = latest.current.exportDefaults;
       const settings = {
+        execution: latest.current.execution,
         ...defaults,
         ...overrides,
         limits: { ...defaults?.limits, ...overrides.limits },
@@ -149,6 +166,46 @@ export function useExcel<T extends object>(
       };
       return run('export', settings, operation =>
         downloadExcel({ ...settings, ...operation })
+      );
+    },
+    [run]
+  );
+  const consume = useCallback<UseExcelReturn<T>['importBatches']>(
+    (input, overrides) => {
+      const defaults = latest.current.importDefaults;
+      const settings = {
+        execution: latest.current.execution,
+        ...defaults,
+        ...overrides,
+        limits: { ...defaults?.limits, ...overrides.limits },
+        csv: { ...defaults?.csv, ...overrides.csv },
+        schema: latest.current.schema,
+      };
+      return run('parse', settings, operation => {
+        config(
+          settings.header,
+          'Provide a header in importDefaults or import options'
+        );
+        return importBatches(input, {
+          ...settings,
+          ...operation,
+        } as ImportBatchesOptions<T>);
+      });
+    },
+    [run]
+  );
+  const write = useCallback(
+    async <R extends object>(overrides: CsvWriteOptions<R>) => {
+      const defaults = latest.current.exportDefaults;
+      const settings = {
+        execution: latest.current.execution,
+        ...defaults,
+        ...overrides,
+        limits: { ...defaults?.limits, ...overrides.limits },
+        csv: { ...defaults?.csv, ...overrides.csv },
+      };
+      return run('export', settings, operation =>
+        writeCsv({ ...settings, ...operation })
       );
     },
     [run]
@@ -171,5 +228,14 @@ export function useExcel<T extends object>(
       setExportState({ status: 'idle' });
     }
   }, []);
-  return { parse, download, cancel, reset, parseState, exportState };
+  return {
+    parse,
+    download,
+    importBatches: consume,
+    writeCsv: write,
+    cancel,
+    reset,
+    parseState,
+    exportState,
+  };
 }

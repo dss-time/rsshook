@@ -46,6 +46,8 @@ try {
       )
         throw new Error(`Missing artifact: ${entry}.${extension}`);
     }
+  if (!packed.files.some(file => file.path === 'dist/worker.mjs'))
+    throw new Error('Missing standalone Worker artifact');
   if (packed.files.some(file => /^(src|tests|node_modules)\//.test(file.path)))
     throw new Error('Unexpected source/test/dependency files in archive');
   await mkdir(join(directory, 'node_modules/rsshook-excel'), {
@@ -98,7 +100,13 @@ try {
   console.log(
     run(
       process.execPath,
-      ['--test', 'tests/core.test.mjs', 'tests/react.test.cjs'],
+      [
+        '--test',
+        'tests/core.test.mjs',
+        'tests/react.test.cjs',
+        'tests/stream.test.mjs',
+        'tests/worker.test.mjs',
+      ],
       installed
     ).trim()
   );
@@ -115,7 +123,7 @@ try {
   );
   await writeFile(
     join(directory, 'main.tsx'),
-    `import {createRoot} from 'react-dom/client'; import {ReactExcelExample} from './node_modules/rsshook-excel/examples/ReactExample.tsx'; createRoot(document.getElementById('root')!).render(<ReactExcelExample />);`
+    `import ExcelWorker from 'rsshook-excel/worker?worker'; const w=new ExcelWorker(); w.terminate(); import {createRoot} from 'react-dom/client'; import {ReactExcelExample} from './node_modules/rsshook-excel/examples/ReactExample.tsx'; createRoot(document.getElementById('root')!).render(<ReactExcelExample />);`
   );
   await build({
     root: directory,

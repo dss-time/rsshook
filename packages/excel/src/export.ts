@@ -1,7 +1,6 @@
 import type { WorkBook, WorkSheet } from 'xlsx';
 import type {
   CellValue,
-  ExportColumn,
   ExportSheet,
   SerializeOptions,
   SerializedExcel,
@@ -16,62 +15,26 @@ import {
 } from './errors';
 import { loadEngine, abortable, columnName, ensureCodepages } from './engine';
 import { createLayout, regionMerges } from './layout';
+import { workerSession } from './worker-client';
+import { batchSize, yieldToHost } from './flow';
 
-function formulaLike(value: string): boolean {
-  for (const character of value) {
-    if (character.charCodeAt(0) < 32 || /\s/.test(character)) continue;
-    return '=+-@'.includes(character);
-  }
-  return false;
-}
-
-function safeValue(
-  value: unknown,
-  format: string,
-  escapeCsv: boolean
-): CellValue {
-  if (value == null) return null;
-  if (value instanceof Date) {
-    config(Number.isFinite(value.getTime()), 'Invalid Date cannot be exported');
-    // Treat Date as a UTC instant; avoid browser-local timezone changes in the engine.
-    return value.toISOString();
-  }
-  config(
-    ['string', 'number', 'boolean'].includes(typeof value),
-    'Export values must be strings, finite numbers, booleans, Dates or null'
-  );
-  config(
-    typeof value !== 'number' || Number.isFinite(value),
-    'Non-finite numbers cannot be exported'
-  );
-  if (
-    format === 'csv' &&
-    escapeCsv &&
-    typeof value === 'string' &&
-    formulaLike(value)
-  )
-    return `'${value}`;
-  return value as CellValue;
-}
-export function getValue<T extends object>(
-  column: ExportColumn<T>,
-  row: T,
-  index: number,
-  rowNumber: number
-): unknown {
-  if (column.value) return column.value(row, { index, rowNumber });
-  const value = row[column.field!];
-  // The mapped public type ties each formatter to its field; dispatch once internally.
-  return column.format
-    ? (column.format as (v: unknown, row: T) => CellValue)(value, row)
-    : value;
-}
+import { safeValue, getValue } from './export-values';
+export { getValue } from './export-values';
 export async function serializeExcel<T extends object>(
   options: SerializeOptions<T>
 ): Promise<SerializedExcel> {
+  let session: ReturnType<typeof workerSession> | undefined;
   try {
     checkAbort(options.signal);
+    config(
+      options.execution === undefined ||
+        ['main', 'worker'].includes(options.execution.mode),
+      'Invalid execution mode'
+    );
+    if (options.execution?.mode === 'worker')
+      session = workerSession(options.execution, options.signal);
     const limits = resolveLimits(options.limits);
+    const size = batchSize(options.batchSize);
     const format = options.format ?? 'xlsx';
     config(
       ['xlsx', 'xls', 'csv'].includes(format),
@@ -82,6 +45,13 @@ export async function serializeExcel<T extends object>(
       throw new ExcelError('SHEET_LIMIT', 'Too many sheets');
     if (format === 'csv')
       config(options.sheets.length === 1, 'CSV supports exactly one sheet');
+    if (format === 'csv' && options.csv?.delimiter !== undefined)
+      config(
+        options.csv.delimiter.length === 1 &&
+          !/["\r\n]/.test(options.csv.delimiter),
+        'Invalid CSV delimiter'
+      );
+    if (session) await session.request('book');
     const names = new Set<string>();
     phase(options, 'layout');
     const prepared: Array<{
@@ -132,8 +102,20 @@ export async function serializeExcel<T extends object>(
         );
       }
       const byId = new Map(sheet.columns.map(column => [column.id, column]));
-      const rows = [...layout.rows];
-      sheet.rows.forEach((row, index) => {
+      let rows = [...layout.rows];
+      const sanitize = (rows: CellValue[][]) =>
+        rows.map(row =>
+          Array.from({ length: layout.width }, (_, i) =>
+            safeValue(row[i], format, options.csv?.formulaEscape !== false)
+          )
+        );
+      if (session) {
+        await session.request('sheet', sheet.name);
+        await session.request('rows', sanitize(rows));
+        rows = [];
+      }
+      for (let index = 0; index < sheet.rows.length; index++) {
+        const row = sheet.rows[index];
         checkAbort(options.signal);
         const values: CellValue[] = Array(layout.width).fill(null);
         for (const [position, id] of layout.bindings) {
@@ -168,8 +150,13 @@ export async function serializeExcel<T extends object>(
           }
         }
         rows.push(values);
-      });
-      const suffixOffset = rows.length;
+        if (session && rows.length >= size) {
+          await session.request('rows', sanitize(rows));
+          rows = [];
+        }
+        if (index % size === size - 1) await yieldToHost(options.signal);
+      }
+      const suffixOffset = layout.dataOffset + sheet.rows.length;
       layout.merges.push(
         ...regionMerges(layout.suffix, layout.width, suffixOffset)
       );
@@ -180,12 +167,53 @@ export async function serializeExcel<T extends object>(
           safeValue(row[index], format, options.csv?.formulaEscape !== false)
         )
       );
+      if (session) {
+        if (sanitized.length) await session.request('rows', sanitized);
+        await session.request('style', {
+          merges: layout.merges,
+          columns: Array.from({ length: layout.width }, (_, i) => {
+            const id = layout.bindings.get(i);
+            return { width: sheet.columns.find(c => c.id === id)?.width };
+          }),
+          formats: [...layout.bindings].flatMap(([i, id]) => {
+            const c = byId.get(id)!;
+            return c.numberFormat ? [[i, c.numberFormat]] : [];
+          }),
+          start: layout.dataOffset,
+          count: sheet.rows.length,
+        });
+        continue;
+      }
       prepared.push({
         name: sheet.name,
         rows: sanitized,
         layout,
         source: sheet,
       });
+    }
+    if (session) {
+      phase(options, 'writing');
+      const bytes = await session.request<Uint8Array>('write', {
+        format,
+        csv: options.csv,
+      });
+      checkAbort(options.signal);
+      if (bytes.byteLength > limits.maxFileSize)
+        throw new ExcelError(
+          'FILE_SIZE_LIMIT',
+          'Generated file exceeds size limit'
+        );
+      return {
+        bytes,
+        format,
+        extension: format,
+        mimeType:
+          format === 'xlsx'
+            ? 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet'
+            : format === 'xls'
+              ? 'application/vnd.ms-excel'
+              : 'text/csv;charset=utf-8',
+      };
     }
     const XLSX = await abortable(loadEngine(), options.signal);
     if (format === 'xls')
@@ -257,5 +285,7 @@ export async function serializeExcel<T extends object>(
     };
   } catch (error) {
     throw asExcelError(error, 'EXPORT_FAILED');
+  } finally {
+    session?.close();
   }
 }

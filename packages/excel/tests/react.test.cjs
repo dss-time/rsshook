@@ -252,3 +252,106 @@ test('cancelling export before its asynchronous stage prevents download', async 
   assert.equal(downloads.length, 0);
   await hook.unmount();
 });
+
+test('hook importBatches supports cancellation, latest parse and reset without accumulation', async () => {
+  const mounted = await mount();
+  try {
+    let cancelled = 0;
+    const source = new ReadableStream({
+      cancel() {
+        cancelled++;
+      },
+    });
+    let pending;
+    await act(async () => {
+      pending = rejection(
+        mounted.api.importBatches(source, { format: 'csv', onBatch() {} })
+      );
+    });
+    await act(async () => {
+      mounted.api.cancel('parse');
+      assert.equal((await pending).code, 'CANCELLED');
+    });
+    assert.equal(cancelled, 1);
+    assert.equal(mounted.api.parseState.status, 'cancelled');
+    let report;
+    await act(async () => {
+      report = await mounted.api.importBatches(
+        new TextEncoder().encode('编号\na\nb'),
+        { format: 'csv', batchSize: 1, onBatch: async () => {} }
+      );
+    });
+    assert.equal(report.summary.validRows, 2);
+    assert.equal(mounted.api.parseState.status, 'success');
+    await act(async () => mounted.api.reset());
+    assert.equal(mounted.api.parseState.status, 'idle');
+  } finally {
+    await mounted.unmount();
+  }
+});
+test('hook stream writer shares export busy channel and cancels a pending sink', async () => {
+  const mounted = await mount();
+  try {
+    let aborted = false,
+      pending;
+    await act(async () => {
+      pending = rejection(
+        mounted.api.writeCsv({
+          sheet: sheets[0],
+          sink: {
+            write() {
+              return new Promise(() => {});
+            },
+            abort() {
+              aborted = true;
+            },
+          },
+        })
+      );
+    });
+    await assert.rejects(mounted.api.download({ sheets, filename: 'busy' }), {
+      code: 'BUSY',
+    });
+    await act(async () => {
+      mounted.api.cancel('export');
+      assert.equal((await pending).code, 'CANCELLED');
+    });
+    assert(aborted);
+    assert.equal(mounted.api.exportState.status, 'cancelled');
+  } finally {
+    await mounted.unmount();
+  }
+});
+test('hook forwards default Worker execution and per-call main override', async () => {
+  let factories = 0;
+  const mounted = await mount({
+    schema,
+    importDefaults: { header },
+    execution: {
+      mode: 'worker',
+      workerFactory() {
+        factories++;
+        throw Error('blocked');
+      },
+    },
+  });
+  try {
+    const file = await serializeExcel({ sheets });
+    await act(async () => {
+      assert.equal(
+        (await rejection(mounted.api.parse(file.bytes))).code,
+        'WORKER_UNAVAILABLE'
+      );
+    });
+    assert.equal(factories, 1);
+    await act(async () => {
+      const result = await mounted.api.parse(file.bytes, {
+        execution: { mode: 'main' },
+      });
+      assert.equal(result.validRows.length, 1);
+    });
+    assert.equal(factories, 1);
+  } finally {
+    await mounted.unmount();
+  }
+});

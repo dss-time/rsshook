@@ -98,3 +98,39 @@ defineExcelSchema<{ note?: string }>({ fields: { note: { type: 'string' } } });
 defineExcelSchema<{ quantity: number }>({
   fields: { quantity: { type: 'number', defaultValue: 0 } },
 });
+
+// New streaming and Worker APIs retain row typing in older TypeScript consumers.
+import {
+  importBatches,
+  parseCsvBatches,
+  writeCsv,
+  serializeCsvStream,
+} from 'rsshook-excel';
+const execution: import('rsshook-excel').ExcelExecution = {
+  mode: 'worker',
+  workerFactory: () => new Worker('/excel-worker.mjs', { type: 'module' }),
+};
+void importBatches(new Blob(), {
+  schema,
+  header,
+  execution,
+  batchSize: 500,
+  onBatch: async batch => {
+    batch.validRows.forEach(row => row.data.quantity.toFixed(2));
+  },
+});
+void parseCsvBatches(new ReadableStream<Uint8Array>(), { schema, header });
+void writeCsv<Product>({
+  sheet: {
+    name: 'Data',
+    columns,
+    rows: (async function* () {
+      yield* rows;
+    })(),
+  },
+  sink: new WritableStream<Uint8Array>(),
+});
+void serializeCsvStream<Product>({
+  sheet: { name: 'Data', columns, rows },
+  csv: { newline: '\r\n', chunkBytes: 1024 },
+});

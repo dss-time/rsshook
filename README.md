@@ -1142,3 +1142,11 @@ Email: d1667494390@gmail.com
 - [无框架示例](packages/excel/examples/vanilla.ts)
 
 使用 `npm install rsshook-excel@0.1.0` 安装，React Hook 从 `rsshook-excel/react` 引入。在仓库根目录执行 `npm run excel:build` 构建；测试前安装独立包开发依赖，之后执行 `npm run excel:test`。打包及宿主项目接入步骤见模块文档。
+
+## UI-independent React hooks (3.1.0)
+
+The new `rsshook/react/hooks` entry provides asynchronous tasks, polling,
+debounced callbacks, cross-page selection, bounded batch tasks, isolated search
+history, and headless update checks without loading AntD or Axios.
+See [React hooks integration](docs/react-hooks-integration.md) for API behavior,
+compatibility, cancellation boundaries, and examples for both management apps.

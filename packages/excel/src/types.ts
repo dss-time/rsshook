@@ -99,6 +99,7 @@ export type OperationPhase =
   | 'writing'
   | 'downloading';
 export interface OperationOptions {
+  execution?: ExcelExecution;
   signal?: AbortSignal;
   onPhase?: (phase: OperationPhase) => void;
 }
@@ -113,7 +114,13 @@ export interface ParseOptions<T extends object> extends OperationOptions {
   normalizeHeader?: (value: string) => string;
   skipEmptyRows?: boolean;
   limits?: ExcelLimits;
-  csv?: { delimiter?: string; codepage?: number };
+  csv?: {
+    delimiter?: string;
+    codepage?: number;
+    encoding?: string;
+    chunkBytes?: number;
+    maxRecordChars?: number;
+  };
 }
 export interface ParseResult<T extends object> {
   sheet: { name: string; index: number };
@@ -178,7 +185,8 @@ export interface ExportSheet<T extends object> {
   beforeTable?: SheetRegion;
   afterTable?: SheetRegion;
 }
-export interface SerializeOptions<T extends object> extends OperationOptions {
+export interface SerializeOptions<T extends object>
+  extends OperationOptions, BatchOptions {
   sheets: readonly ExportSheet<T>[];
   format?: 'xlsx' | 'xls' | 'csv';
   limits?: ExcelLimits;
@@ -201,6 +209,65 @@ export type OperationState =
   | { status: 'cancelled' };
 export interface UseExcelOptions<T extends object> {
   schema: ExcelSchema<T>;
+  execution?: ExcelExecution;
   importDefaults?: Omit<ParseOptions<T>, 'schema'>;
   exportDefaults?: Omit<SerializeOptions<T>, 'sheets'>;
+}
+
+/** Worker assets are created by the host bundler; functions stay on the caller thread. */
+export type ExcelWorker = Pick<
+  Worker,
+  'postMessage' | 'terminate' | 'addEventListener' | 'removeEventListener'
+>;
+export type ExcelExecution =
+  | { mode: 'main' }
+  | { mode: 'worker'; workerFactory: () => ExcelWorker; timeoutMs?: number };
+export type CsvInput = ExcelInput | ReadableStream<Uint8Array>;
+export interface BatchOptions {
+  /** Maximum source rows per batch; default 1000. */
+  batchSize?: number;
+}
+export interface BatchParseOptions<T extends object>
+  extends ParseOptions<T>, BatchOptions {
+  /** CSV uses the incremental decoder; excel uses SheetJS. Default excel. */
+  format?: 'excel' | 'csv';
+}
+export interface ImportReport {
+  sheet: ParseResult<object>['sheet'];
+  summary: ParseResult<object>['summary'];
+  warningCount: number;
+}
+export interface ImportBatchesOptions<
+  T extends object,
+> extends BatchParseOptions<T> {
+  /** Awaited before reading/transferring another batch. Results are not accumulated. */
+  onBatch: (batch: ParseResult<T>) => void | Promise<void>;
+}
+export interface CsvStreamExportOptions<T extends object>
+  extends OperationOptions, BatchOptions {
+  sheet: Omit<ExportSheet<T>, 'rows'> & {
+    rows: Iterable<T> | AsyncIterable<T>;
+  };
+  csv?: {
+    delimiter?: string;
+    bom?: boolean;
+    formulaEscape?: boolean;
+    newline?: '\r\n' | '\n';
+    chunkBytes?: number;
+    maxRecordChars?: number;
+  };
+  limits?: ExcelLimits;
+}
+export interface CsvSink {
+  write: (chunk: Uint8Array) => void | Promise<void>;
+  close?: () => void | Promise<void>;
+  abort?: (reason: unknown) => void | Promise<void>;
+}
+export interface CsvWriteOptions<
+  T extends object,
+> extends CsvStreamExportOptions<T> {
+  sink: WritableStream<Uint8Array> | CsvSink;
+}
+export interface CsvWriteReport {
+  bytesWritten: number;
 }

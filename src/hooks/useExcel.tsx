@@ -1,5 +1,5 @@
-import { useCallback } from "react";
-import * as XLSX from "xlsx";
+import { useCallback } from 'react';
+import * as XLSX from 'xlsx';
 
 interface ExportOptions<T> {
   headers: string[];
@@ -14,6 +14,7 @@ interface UseExcelReturn<T> {
   importAndDisplayExcel: (file: File) => Promise<string>;
 }
 
+/** @deprecated Use useExcel from rsshook-excel/react for validated imports, Worker and streaming. */
 export function useExcel<T>(): UseExcelReturn<T> {
   // 导出数据到 Excel
   const exportToExcel = useCallback(
@@ -21,7 +22,7 @@ export function useExcel<T>(): UseExcelReturn<T> {
       headers,
       exportData: data,
       fileName,
-      sheetName = "Sheet1",
+      sheetName = 'Sheet1',
     }: ExportOptions<T>) => {
       const worksheet = XLSX.utils.json_to_sheet(data, { header: headers });
       const workbook = XLSX.utils.book_new();
@@ -36,12 +37,16 @@ export function useExcel<T>(): UseExcelReturn<T> {
     return new Promise((resolve, reject) => {
       const reader = new FileReader();
       reader.onload = e => {
-        const data = new Uint8Array(e.target?.result as ArrayBuffer);
-        const workbook = XLSX.read(data, { type: "array" });
-        const firstSheetName = workbook.SheetNames[0];
-        const worksheet = workbook.Sheets[firstSheetName];
-        const jsonData: T[] = XLSX.utils.sheet_to_json(worksheet);
-        resolve(jsonData);
+        try {
+          const data = new Uint8Array(e.target?.result as ArrayBuffer);
+          const workbook = XLSX.read(data, { type: 'array' });
+          const firstSheetName = workbook.SheetNames[0];
+          const worksheet = workbook.Sheets[firstSheetName];
+          const jsonData: T[] = XLSX.utils.sheet_to_json(worksheet);
+          resolve(jsonData);
+        } catch (error) {
+          reject(error);
+        }
       };
       reader.onerror = error => reject(error);
       reader.readAsArrayBuffer(file);
@@ -55,13 +60,13 @@ export function useExcel<T>(): UseExcelReturn<T> {
       reader.onload = e => {
         try {
           const data = new Uint8Array(e.target?.result as ArrayBuffer);
-          const workbook = XLSX.read(data, { type: "array" });
+          const workbook = XLSX.read(data, { type: 'array' });
           const firstSheetName = workbook.SheetNames[0];
           const worksheet = workbook.Sheets[firstSheetName];
           const htmlString = XLSX.utils.sheet_to_html(worksheet);
           resolve(htmlString);
         } catch {
-          reject(new Error("文件解析失败，请检查文件格式"));
+          reject(new Error('文件解析失败，请检查文件格式'));
         }
       };
       reader.onerror = error => reject(error);

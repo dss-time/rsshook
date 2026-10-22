@@ -57,6 +57,7 @@ const sleep = (ms: number, signal?: AbortSignal) => {
     return Promise.resolve();
   }
 
+  assertNotAborted(signal);
   return new Promise<void>((resolve, reject) => {
     const timer = setTimeout(() => {
       signal?.removeEventListener('abort', handleAbort);
@@ -83,8 +84,8 @@ const sleep = (ms: number, signal?: AbortSignal) => {
  * @param options Retry options.
  * @returns Resolved task result.
  */
-export async function useRetry<T>(
-  fn: () => Promise<T>,
+export async function retryAsync<T>(
+  fn: (signal?: AbortSignal) => Promise<T>,
   options: UseRetryOptions<T> = {}
 ): Promise<T> {
   const {
@@ -96,13 +97,26 @@ export async function useRetry<T>(
     onRetry,
   } = options;
 
+  if (
+    !Number.isSafeInteger(retries) ||
+    retries < 0 ||
+    !Number.isFinite(delay) ||
+    delay < 0
+  )
+    throw new RangeError('Invalid retry options');
   let attempt = 0;
 
   while (true) {
     assertNotAborted(signal);
 
     try {
-      return await fn();
+      return await raceAbort(
+        Promise.resolve().then(() => {
+          assertNotAborted(signal);
+          return fn(signal);
+        }),
+        signal
+      );
     } catch (error) {
       assertNotAborted(signal);
 
@@ -112,13 +126,17 @@ export async function useRetry<T>(
 
       const nextAttempt = attempt + 1;
       const canRetry = shouldRetry
-        ? await shouldRetry(error, nextAttempt)
+        ? await raceAbort(
+            Promise.resolve(shouldRetry(error, nextAttempt)),
+            signal
+          )
         : true;
 
       if (!canRetry) {
         throw error;
       }
 
+      assertNotAborted(signal);
       onRetry?.(error, nextAttempt);
 
       const retryDelay = backoff ? delay * 2 ** attempt : delay;
@@ -137,3 +155,31 @@ export async function useRetry<T>(
  *   backoff: true,
  * });
  */
+
+/** @deprecated Plain async function; prefer retryAsync. */
+export const useRetry = retryAsync;
+function raceAbort<T>(promise: Promise<T>, signal?: AbortSignal): Promise<T> {
+  if (signal?.aborted) {
+    void promise.catch(() => {});
+    return Promise.reject(createAbortError());
+  }
+  if (!signal) return promise;
+  return new Promise((resolve, reject) => {
+    const abort = () => {
+      cleanup();
+      reject(createAbortError());
+    };
+    const cleanup = () => signal.removeEventListener('abort', abort);
+    signal.addEventListener('abort', abort, { once: true });
+    promise.then(
+      value => {
+        cleanup();
+        resolve(value);
+      },
+      error => {
+        cleanup();
+        reject(error);
+      }
+    );
+  });
+}

@@ -1,6 +1,11 @@
 export * from './types';
 export { ExcelError, DEFAULT_LIMITS } from './errors';
-export { parseExcel } from './import';
+export {
+  parseExcel,
+  parseExcelBatches,
+  parseCsvBatches,
+  importBatches,
+} from './import';
 export { serializeExcel } from './export';
 import { getValue } from './export';
 import type {
@@ -84,3 +89,4 @@ export function defineExcelSheet<T extends object>(
     })),
   };
 }
+export { serializeCsvStream, writeCsv } from './csv-write';

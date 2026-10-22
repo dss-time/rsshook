@@ -27,6 +27,13 @@ export default defineConfig({
     lib: {
       entry: {
         index: resolve(projectRoot, 'src/index.ts'),
+        reactHooks: resolve(projectRoot, 'src/react/hooks.ts'),
+        useAsyncTask: resolve(projectRoot, 'src/react/useAsyncTask.ts'),
+        usePolling: resolve(projectRoot, 'src/react/usePolling.ts'),
+        useDebounceFn: resolve(projectRoot, 'src/react/useDebounceFn.ts'),
+        useRowSelection: resolve(projectRoot, 'src/react/useRowSelection.ts'),
+        useBatchTask: resolve(projectRoot, 'src/react/useBatchTask.ts'),
+        useUpdateCheck: resolve(projectRoot, 'src/react/useUpdateCheck.ts'),
         core: resolve(projectRoot, 'src/core/index.ts'),
         react: resolve(projectRoot, 'src/react/index.ts'),
         vue: resolve(projectRoot, 'src/vue/index.ts'),

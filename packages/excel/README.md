@@ -1,6 +1,6 @@
 # rsshook-excel
 
-面向浏览器和普通 TypeScript 调用的 Excel 导入导出模块，提供可选 React 18/19 Hook。无 AntD、Axios、Umi 或 React DOM 运行时依赖。当前版本 `0.1.0`。
+面向浏览器和普通 TypeScript 调用的 Excel 导入导出模块，提供可选 React 18/19 Hook。无 AntD、Axios、Umi 或 React DOM 运行时依赖。已发布版本 `0.1.0`；下文 Worker 与流式 API 属于当前仓库的未发布变更，需本地构建后安装 tgz。
 
 ## 安装
 
@@ -252,7 +252,7 @@ excel.reset();
 
 配置优先级：每次调用覆盖 Hook 默认值；limits 和 csv 做一层合并，header/sheets/schema 不做隐式深度合并。Hook 方法引用稳定并使用最近一次 render 的配置，操作开始后使用该次配置。
 
-信号取消可立即结束异步文件读取等待；同步 SheetJS 运算只能在前后检查取消，无法中途打断主线程计算。阶段通知是 reading/matching/validating/layout/writing/downloading，不伪造进度百分比。下载 success 表示已触发浏览器下载，不代表用户已经保存文件。
+信号取消可立即结束异步文件读取等待；主线程模式的同步 SheetJS 运算只能在前后检查取消。Worker 模式取消会终止专属 Worker，可中断其中的解码和编码。阶段通知是 reading/matching/validating/layout/writing/downloading，不伪造进度百分比。下载 success 表示已触发浏览器下载，不代表用户已经保存文件。
 
 完整原生控件 React 示例见 `examples/ReactExample.tsx`；无框架示例见 `examples/vanilla.ts`。
 
@@ -268,7 +268,7 @@ CSV 默认 UTF-8 + BOM，支持单字符 delimiter；`bom: false` 关闭 BOM。�
 
 默认限制：文件 10 MiB、每表数据范围 20000 行、256 列、1000000 单元格、20 工作表、1000 条 issue（含 warning）。可通过 limits 调整为正安全整数。数值为初始保守默认值，不是经过全平台验证的性能承诺。导出单元格数量按整本工作簿的排布累计；导入按所选工作表实际单元格计数。
 
-解析不展开 !ref，并在布局扩展前检查列数与单元格上限。SheetJS 解压和解码仍需先加载文件，解析后限制无法完全防御压缩炸弹。首版无 Worker、流式大文件、公式计算、复杂样式或工作簿编辑功能。
+解析不展开 !ref，并在布局扩展前检查列数与单元格上限。SheetJS 解压和解码仍需先加载文件，解析后限制无法完全防御压缩炸弹。Worker 和 CSV 流式 API 见下文；仍不提供流式 XLSX、公式计算、复杂样式或工作簿编辑功能。
 
 ## 错误与验收
 
@@ -289,3 +289,113 @@ EXCEL_XLSX_PATH=/path/to/node_modules/xlsx npm run test:package
 库级测试覆盖 React 18/19 和独立打包产物。两个业务宿主的真实页面接入验收仍需在迁移时完成；此包的单独依赖约束不会要求旧项目升级 AntD 或 Axios。
 
 本机 Node 24、SheetJS 0.20.3 的三列样例基准：1000/10000/20000 行导出约 11/69/103 ms，解析约 18/97/153 ms；不同文件内容、运行时与设备会显著改变结果。可运行 `npm run benchmark` 重测，输出 heapUsed 为进程当时用量，并非操作峰值或独立增量。
+
+## 大文件：Worker、批次与 CSV 流式读写（未发布）
+
+### Worker 接入
+
+`parseExcel`、`parseExcelBatches`、`parseCsvBatches`、`importBatches`、`serializeExcel` 和 `downloadExcel` 均接受 `execution`。默认主线程；Worker 模式必须提供工厂，每个操作创建专属 Worker，并在完成、异常、超时或取消时终止它。每次请求的默认超时为 120 秒，可通过 `timeoutMs` 调整。
+
+Vite（新项目可使用此入口）：
+
+```ts
+import ExcelWorker from 'rsshook-excel/worker?worker';
+const execution = {
+  mode: 'worker' as const,
+  workerFactory: () => new ExcelWorker(),
+};
+```
+
+TypeScript 项目需加载 `vite/client` 类型。Umi/Webpack 5 可以使用构建器的 Worker 资源入口：
+
+```ts
+const execution = {
+  mode: 'worker' as const,
+  workerFactory: () =>
+    new Worker(new URL('rsshook-excel/worker', import.meta.url), {
+      type: 'module',
+    }),
+};
+```
+
+应在宿主的生产构建中确认资源地址；若宿主无法处理此语法，可将包内 `dist/worker.mjs` 作为静态资源部署，由工厂通过实际 URL 创建模块 Worker。资源已内置 SheetJS 和旧字符表，无需运行时从 CDN 下载依赖。工厂适配构建器和 CSP；库不使用 eval/blob Worker，也不在 Worker 不可用时静默回退主线程。
+
+读取文件和 SheetJS 解码在 Worker 内运行；原始单元格按批回传。表头归一化、字段解析、校验及导出的 `value/format` 回调在调用线程执行，函数无需也不会被序列化发送。导出将转换后的标量行分批发到 Worker，再执行最终编码。重型用户回调仍可能占用主线程。输入 ArrayBuffer/Uint8Array 保留调用方所有权，传输前会复制；File/Blob 直接结构化克隆。最终输出字节使用可转移缓冲区返回。
+
+**XLSX/XLS 仍需完整工作簿内存。** Worker 解决页面阻塞和硬取消，批次减少跨线程峰值；`parseExcel` 仍会累计所有校验结果，`serializeExcel/downloadExcel` 仍返回完整文件。真正控制累计结果内存，应使用下面的批次 API；完整 XLSX 内存仍受文件解压后大小影响。
+
+### 批次导入与背压
+
+```ts
+import { importBatches } from 'rsshook-excel';
+const controller = new AbortController();
+const report = await importBatches(file, {
+  schema,
+  header,
+  execution,
+  format: 'excel', // CSV 使用 'csv' 才启用增量解析器
+  batchSize: 500,
+  signal: controller.signal,
+  async onBatch(batch) {
+    // 先处理无效行；只保留业务需要的数据。
+    await consumeRows(batch.validRows, batch.invalidRows);
+  },
+});
+// report: sheet、累计 summary、warningCount，不包含累计行数组
+// controller.abort() 可从取消按钮调用
+```
+
+`consumeRows` 由业务方实现。库等待 `onBatch` 完成才请求下一批，不预读后续批次；异步回调失败会结束操作并释放资源。批次数量 `batchSize` 默认为 1000，范围 1–10000，导出也可配置该值。回调可以逐批产生业务副作用，后续失败或取消不会回滚已处理批次；需要原子导入时由业务方采用暂存/提交机制。
+
+也可以用 `for await` 消费 `parseExcelBatches(file, options)` 或 `parseCsvBatches(input, options)`；每批均为 `ParseResult<T>`，含本批行、警告和本批 summary，源行号连续保留，issue 上限按整个操作累计。提前 `break` 会释放 Worker/输入 reader；等待读取期间需通过 AbortSignal 取消。空文件拒绝；仅有表头的文件产生零数据统计。
+
+### CSV 真正流式导入
+
+`parseCsvBatches` 或 `importBatches(..., {format:'csv'})` 不经过 SheetJS：增量 TextDecoder + CSV 状态机，支持跨块的 UTF-8 字符、BOM、CRLF、引号内换行和双引号转义。不会先读取整个 Blob 或拼接完整文本。CSV 的 rowNumber 是逻辑记录序号，带引号字段中的换行不增加记录序号。CSV 工作表固定为 `Sheet1`。
+
+输入支持 Blob/File、ArrayBuffer、Uint8Array；主线程模式额外支持 `ReadableStream<Uint8Array>`（如 `response.body`）。Worker 模式接受前三类文件/缓冲区输入，外部 ReadableStream 应显式选择 `{mode:'main'}`。默认 UTF-8 严格解码；其他编码可配置 `csv.encoding` 为平台 TextDecoder 支持的标签，或使用支持的 `codepage`（65001/936/950/1252/1200/1201）。非法编码或 CSV 语法会拒绝。旧 `parseExcel` 的 CSV 自动识别继续使用原来的 SheetJS 路径，以保留兼容性。
+
+```ts
+for await (const batch of parseCsvBatches(response.body!, {
+  schema,
+  header,
+  execution: { mode: 'main' },
+  batchSize: 500,
+  csv: { chunkBytes: 65536, maxRecordChars: 1048576 },
+  signal: controller.signal,
+})) {
+  await consumeRows(batch.validRows, batch.invalidRows);
+}
+```
+
+CSV 读取按已发现的列处理；后续记录首次出现新列时，再应用 `unknownColumns` 策略。无需保存全部文件以预扫描列。普通标题、多行路径和固定列绑定均复用现有匹配/校验规则。
+
+### CSV 真正流式导出
+
+```ts
+import { writeCsv } from 'rsshook-excel';
+await writeCsv({
+  sheet: {
+    name: 'Data',
+    columns: [{ id: 'code', field: 'code', title: '编号' }],
+    rows: fetchRowsByPage(), // Iterable 或 AsyncIterable，由业务方实现分页
+  },
+  sink: writable, // WritableStream<Uint8Array>，例如文件句柄 createWritable()
+  signal: controller.signal,
+  csv: { bom: true, newline: '\r\n', chunkBytes: 65536 },
+});
+```
+
+也可提供 `{write: async chunk => ..., close: async () => ..., abort: async reason => ...}` 自定义 sink。每次写入完成后才继续读取源行，失败/取消时调用 abort 并关闭数据迭代器。仅返回 `bytesWritten`，不会收集完整输出。`serializeCsvStream` 直接提供 UTF-8 字节异步生成器，方便接入自有管道。块可能切开一个多字节 UTF-8 字符，接收方应直接按顺序写入字节或使用流式解码。
+
+CSV 流式导出在主线程增量执行并定期让出事件循环；设置 Worker execution 会明确报配置错误。它不构建 SheetJS 工作簿。支持普通/分组/自定义矩阵表头及前后说明区域，但 CSV 无法表达合并、列宽和数字格式，带这些配置会拒绝。默认转义公式文本（包括表头/备注）、输出 BOM 和 CRLF；可显式调整 delimiter/bom/formulaEscape/newline。
+
+读取与写入的 `chunkBytes` 默认 64 KiB，范围 1–1 MiB；单条 CSV 记录默认最多 1048576 字符（`maxRecordChars`），以防超长字段突破内存预算。导入按解码后的记录计，导出按转义后记录计。流式只限制库自己的缓冲；调用方提供的单个巨大输入块、超长原始行、累计结果数组或缓慢且不支持取消的外部回调仍由调用方负责。
+
+要获得有界内存，需使用文件/网络 sink；将所有块收集到数组再创建 Blob 仍会占用整份输出内存。浏览器文件系统 API 的支持与授权由宿主处理，库不会自动弹出文件选择器。
+
+默认资源上限仍是文件 10 MiB / 20000 数据行等原有值；处理更大文件须显式配置 `limits`，并结合目标设备实测。超限或后续失败之前，部分批次/字节可能已经交给消费者。
+
+React `useExcel` 支持顶层 `execution` 默认值，并新增 `importBatches(input, options)` 和 `writeCsv(options)`。顶层默认值可由 importDefaults/exportDefaults、再由单次调用覆盖。批次导入复用 parseState/最新调用生效机制；流式导出复用 exportState/BUSY 规则。`cancel/reset` 和卸载会取消两类操作；CSV 流式导出时可单次覆盖 `execution:{mode:'main'}`。
+
+完整可类型检查的示例：[examples/LargeFiles.ts](./examples/LargeFiles.ts)。两个业务项目的字段映射、业务行数限制、去重、请求并发和 API 调用继续由项目提供。

@@ -1,4 +1,6 @@
 export class WebSocketManager {
+  private closed = false;
+  private reconnectTimer?: ReturnType<typeof setTimeout>;
   private url: string;
   private socket: WebSocket | null = null;
   private reconnectInterval: number;
@@ -19,6 +21,7 @@ export class WebSocketManager {
   }
 
   private connect() {
+    if (this.closed) return;
     this.socket = new WebSocket(this.url);
 
     this.socket.onopen = () => {
@@ -32,8 +35,8 @@ export class WebSocketManager {
 
     this.socket.onclose = () => {
       this.isConnected = false;
-      if (this.reconnectAttempts < this.maxReconnectAttempts) {
-        setTimeout(() => {
+      if (!this.closed && this.reconnectAttempts < this.maxReconnectAttempts) {
+        this.reconnectTimer = setTimeout(() => {
           this.reconnectAttempts++;
           this.connect();
         }, this.reconnectInterval);
@@ -60,6 +63,8 @@ export class WebSocketManager {
   }
 
   public close() {
+    this.closed = true;
+    clearTimeout(this.reconnectTimer);
     this.socket?.close();
     this.isConnected = false;
   }

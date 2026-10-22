@@ -1,5 +1,13 @@
 # Changelog
 
+## 0.2.0 — 2026-10-22
+
+- 增加可注入工厂的专属 Worker 执行、按需批次传输、超时和终止取消；提供独立 Worker 资源入口。
+- 增加 parseExcelBatches / parseCsvBatches / importBatches，支持等待消费方、累计统计及操作级限制。
+- 增加增量 CSV 解码/解析、serializeCsvStream / writeCsv，支持异步行来源、写入背压和资源释放。
+- React Hook 新增批次导入及流式写入，共用已有状态、取消和生命周期机制。
+- XLSX/XLS 在 Worker 内仍需完整工作簿；CSV 流式写入使用主线程增量处理。
+
 ## 0.1.0 — 2026-10-22
 
 - 首次发布独立 Excel 导入导出模块，支持普通 TypeScript 函数和 React 18/19 Hook。

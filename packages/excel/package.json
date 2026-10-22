@@ -1,6 +1,6 @@
 {
   "name": "rsshook-excel",
-  "version": "0.1.0",
+  "version": "0.2.0",
   "description": "Configurable Excel import/export with custom headers and optional React hooks",
   "license": "MIT",
   "type": "module",
@@ -37,17 +37,20 @@
         "types": "./dist/react.d.cts",
         "default": "./dist/react.cjs"
       }
-    }
+    },
+    "./worker": "./dist/worker.mjs"
   },
   "files": [
     "dist",
     "README.md",
     "CHANGELOG.md"
   ],
-  "sideEffects": false,
+  "sideEffects": [
+    "./dist/worker.mjs"
+  ],
   "scripts": {
     "type-check": "tsc -p tsconfig.json",
-    "build": "npm run type-check && vite build --config vite.config.mts && tsc -p tsconfig.json --noEmit false --emitDeclarationOnly && node scripts/build-types.mjs",
+    "build": "npm run type-check && vite build --config vite.config.mts && vite build --config vite.worker.config.mts && tsc -p tsconfig.json --noEmit false --emitDeclarationOnly && node scripts/build-types.mjs",
     "test": "npm run build && node --test tests/*.test.mjs tests/*.test.cjs && npm run test:types && npm run test:examples",
     "test:types": "node scripts/check-types.mjs",
     "test:examples": "tsc -p tsconfig.examples.json",
