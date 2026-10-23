@@ -174,3 +174,90 @@ test('legacy request queue clear retains error contract and success precedes idl
   await Promise.resolve();
   assert.deepEqual(events, ['success', 'idle']);
 });
+test('WebSocket reports send outcome and isolates subscribers', () => {
+  const previous = global.WebSocket;
+  let socket;
+  global.WebSocket = class {
+    readyState = 0;
+    constructor() {
+      socket = this;
+    }
+    send() {}
+    close() {
+      this.readyState = 3;
+      this.onclose?.();
+    }
+  };
+  try {
+    const { WebSocketManager } = require('../src/utils/webSocket/webSocket.ts');
+    const manager = new WebSocketManager('ws://example');
+    assert.equal(manager.trySendMessage('x'), false);
+    socket.readyState = 1;
+    socket.onopen();
+    assert.equal(manager.trySendMessage('x'), true);
+    let calls = 0;
+    manager.addMessageListener(() => {
+      throw Error('observer');
+    });
+    manager.addMessageListener(() => calls++);
+    socket.onmessage({ data: 'a' });
+    assert.equal(calls, 1);
+    manager.close();
+    assert.equal(manager.trySendMessage('x'), false);
+  } finally {
+    global.WebSocket = previous;
+  }
+});
+test('URL helper retains legacy array mappings, hash and unrelated fields', () => {
+  const {
+    syncSearchFormWithUrl,
+  } = require('../src/core/url/syncSearchFormWithUrl.ts');
+  for (const arrayFormat of ['repeat', 'bracket', 'comma']) {
+    const sync = syncSearchFormWithUrl({
+      fields: ['ids'],
+      fieldMap: { ids: 'id' },
+      arrayFormat,
+      parseNumber: true,
+    });
+    assert.deepEqual(sync.getInitialValues(sync.stringify({ ids: [1, 2] })), {
+      ids: [1, 2],
+    });
+    const merged = sync.mergeToUrl('/list?keep=yes&id=old#section', {
+      ids: [1, 2],
+    });
+    assert(merged.endsWith('#section'));
+    assert(merged.includes('keep=yes'));
+    assert(!merged.includes('old'));
+    assert.equal(
+      sync.mergeToUrl(merged, { ids: [] }),
+      '/list?keep=yes#section'
+    );
+  }
+});
+test('retry retains DOMException cancellation contract while awaiting retry decision', async () => {
+  const { retryAsync } = require('../src/core/request/useRetry.ts');
+  const controller = new AbortController();
+  let deciding;
+  const decision = new Promise(r => (deciding = r));
+  let enter;
+  const entered = new Promise(r => (enter = r));
+  const pending = retryAsync(
+    async () => {
+      throw Error('retry');
+    },
+    {
+      signal: controller.signal,
+      shouldRetry: () => {
+        enter();
+        return decision;
+      },
+    }
+  );
+  await entered;
+  controller.abort();
+  await assert.rejects(
+    pending,
+    error => error instanceof DOMException && error.name === 'AbortError'
+  );
+  deciding(true);
+});

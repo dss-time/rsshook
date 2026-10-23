@@ -1,7 +1,10 @@
 import { useCallback, useEffect, useRef, useState } from 'react';
+import { abortableTask } from '../core/request/abort';
 import { integer } from '../core/request/taskQueue';
 export interface PollingOptions {
   interval?: number;
+  /** Milliseconds; 0 disables timeout. I/O must honor AbortSignal. */
+  timeout?: number;
   enabled?: boolean;
   immediate?: boolean;
   pauseWhenHidden?: boolean;
@@ -15,12 +18,14 @@ export function usePolling(
 ) {
   const {
     interval = 30000,
+    timeout = 0,
     enabled = true,
     immediate = true,
     pauseWhenHidden = true,
     refreshOnFocus = true,
   } = options;
   integer(interval, 'interval', 1);
+  integer(timeout, 'timeout');
   const latest = useRef({ callback, onError: options.onError });
   latest.current = { callback, onError: options.onError };
   const trigger = useRef<() => void>(() => {});
@@ -45,11 +50,28 @@ export function usePolling(
       clearTimeout(timer);
       busy = true;
       controller = new AbortController();
+      const attempt = controller;
+      let timeoutError: Error | undefined;
+      const deadline = timeout
+        ? setTimeout(() => {
+            timeoutError = Object.assign(new Error('Polling timed out'), {
+              name: 'TimeoutError',
+            });
+            attempt.abort(timeoutError);
+          }, timeout)
+        : undefined;
       setState({ running: true });
       try {
-        await latest.current.callback(controller.signal);
+        await abortableTask(
+          Promise.resolve().then(() => {
+            if (!attempt.signal.aborted)
+              return latest.current.callback(attempt.signal);
+          }),
+          attempt.signal
+        );
         if (!stopped) setState({ running: false });
-      } catch (error) {
+      } catch (cause) {
+        const error = timeoutError ?? cause;
         if (!stopped) {
           setState({ running: false, error });
           try {
@@ -59,6 +81,7 @@ export function usePolling(
           }
         }
       } finally {
+        clearTimeout(deadline);
         busy = false;
         schedule();
       }
@@ -90,7 +113,7 @@ export function usePolling(
       if (typeof window !== 'undefined')
         window.removeEventListener('focus', refresh);
     };
-  }, [interval, enabled, immediate, pauseWhenHidden, refreshOnFocus]);
+  }, [interval, timeout, enabled, immediate, pauseWhenHidden, refreshOnFocus]);
   const refresh = useCallback(() => trigger.current(), []);
   return { ...state, refresh };
 }

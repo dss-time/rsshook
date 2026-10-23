@@ -1,4 +1,5 @@
-import { useCallback, useEffect, useRef, useState } from 'react';
+import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
+import { integer } from '../core/request/taskQueue';
 import {
   addSearchHistoryRecord,
   filterExpiredSearchHistory,
@@ -23,6 +24,9 @@ export default function useSearchHistory(
   const options: SearchHistoryOptions =
     typeof input === 'number' ? { maxRecords: input, maxDays: days } : input;
   const { storageKey = 'searchHistory', maxRecords = 8, maxDays = 7 } = options;
+  integer(maxRecords, 'maxRecords');
+  if (!Number.isFinite(maxDays) || maxDays < 0)
+    throw new RangeError('maxDays must be finite and >= 0');
   const latest = useRef(options);
   latest.current = options;
   const storage =
@@ -36,18 +40,32 @@ export default function useSearchHistory(
             return undefined;
           }
         })());
-  const memory = useRef<{
-    key: string;
-    storage: SearchHistoryStorage | undefined;
-    records: SearchHistoryRecord[];
-    dirty: boolean;
-  }>({ key: storageKey, storage, records: [], dirty: false });
-  if (memory.current.key !== storageKey || memory.current.storage !== storage)
-    memory.current = { key: storageKey, storage, records: [], dirty: false };
-  const read = useCallback(() => {
-    if (!storage || memory.current.dirty) return memory.current.records;
+  const memory = useMemo(
+    () => ({
+      storage,
+      storageKey,
+      records: [] as SearchHistoryRecord[],
+      dirty: false,
+    }),
+    [storage, storageKey]
+  );
+  const active = useRef(memory);
+  active.current = memory;
+  const notifyError = useCallback((error: unknown) => {
     try {
-      const raw = storage?.getItem(storageKey);
+      latest.current.onStorageError?.(error);
+    } catch {
+      /* Observers cannot break local state. */
+    }
+  }, []);
+  const read = useCallback(() => {
+    if (!memory.storage || memory.dirty)
+      return filterExpiredSearchHistory(memory.records, maxDays).slice(
+        0,
+        maxRecords
+      );
+    try {
+      const raw = memory.storage.getItem(memory.storageKey);
       const parsed: unknown = raw ? JSON.parse(raw) : [];
       const migrated = latest.current.migrate
         ? latest.current.migrate(parsed)
@@ -62,16 +80,35 @@ export default function useSearchHistory(
         0,
         maxRecords
       );
-      memory.current.records = records;
+      memory.records = records;
       return records;
     } catch (error) {
-      latest.current.onStorageError?.(error);
-      return memory.current.records;
+      notifyError(error);
+      return memory.records;
     }
-  }, [storage, storageKey, maxDays, maxRecords]);
-  const [searchHistory, setHistory] = useState<SearchHistoryRecord[]>(read);
+  }, [maxDays, maxRecords, memory, notifyError]);
+  const [state, setState] = useState(() => ({ memory, records: read() }));
+  const setHistory = useCallback(
+    (records: SearchHistoryRecord[]) => setState({ memory, records }),
+    [memory]
+  );
+  const searchHistory = state.memory === memory ? state.records : [];
   useEffect(() => {
-    const sync = () => setHistory(read());
+    const sync = (event?: Event) => {
+      if (event?.type === 'storage') {
+        const { key, storageArea } = event as StorageEvent;
+        if (
+          (key !== null && key !== storageKey) ||
+          (storageArea && storageArea !== storage)
+        )
+          return;
+      }
+      if (event?.type === eventName) {
+        const detail = (event as CustomEvent).detail;
+        if (detail?.key !== storageKey || detail?.storage !== storage) return;
+      }
+      setHistory(read());
+    };
     sync();
     if (typeof window === 'undefined') return;
     window.addEventListener('storage', sync);
@@ -80,24 +117,30 @@ export default function useSearchHistory(
       window.removeEventListener('storage', sync);
       window.removeEventListener(eventName, sync);
     };
-  }, [read]);
+  }, [read, setHistory, storageKey, storage]);
   const commit = useCallback(
     (change: (current: SearchHistoryRecord[]) => SearchHistoryRecord[]) => {
+      if (active.current !== memory) return;
       const next = change(read());
-      memory.current.records = next;
+      memory.records = next;
       setHistory(next);
       try {
-        if (next.length) storage?.setItem(storageKey, JSON.stringify(next));
-        else storage?.removeItem(storageKey);
-        memory.current.dirty = false;
+        if (next.length)
+          memory.storage?.setItem(memory.storageKey, JSON.stringify(next));
+        else memory.storage?.removeItem(memory.storageKey);
+        memory.dirty = false;
         if (storage && typeof window !== 'undefined')
-          window.dispatchEvent(new window.Event(eventName));
+          window.dispatchEvent(
+            new window.CustomEvent(eventName, {
+              detail: { key: storageKey, storage },
+            })
+          );
       } catch (error) {
-        memory.current.dirty = true;
-        latest.current.onStorageError?.(error);
+        memory.dirty = true;
+        notifyError(error);
       }
     },
-    [read, storage, storageKey]
+    [read, storage, storageKey, memory, setHistory, notifyError]
   );
   const setSearchValue = useCallback(
     (value: string) =>

@@ -1150,3 +1150,5 @@ debounced callbacks, cross-page selection, bounded batch tasks, isolated search
 history, and headless update checks without loading AntD or Axios.
 See [React hooks integration](docs/react-hooks-integration.md) for API behavior,
 compatibility, cancellation boundaries, and examples for both management apps.
+
+See [React hooks 3.2.0](docs/react-hooks-next.md) for the media-query, URL-state, and lifecycle refinements in 3.2.0.

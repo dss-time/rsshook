@@ -22,3 +22,8 @@ export type { UseCheckUpdateOptions } from './useUpdateCheck';
 export * from './dom';
 
 export type { SearchHistoryOptions } from '../hooks/useSearchHistory';
+
+export * from './useMediaQuery';
+export * from './useUrlState';
+export type { KeyboardOptions } from '../hooks/useKeyboard';
+export { default as useKeyboard } from '../hooks/useKeyboard';

@@ -2,17 +2,18 @@ import { abortError } from './taskQueue';
 /** Observe late failures while promptly settling cancellation. */
 export function abortableTask<T>(
   promise: PromiseLike<T>,
-  signal: AbortSignal
+  signal: AbortSignal,
+  createError: () => Error = () => abortError(signal.reason)
 ): Promise<T> {
   const source = Promise.resolve(promise);
   if (signal.aborted) {
     void source.catch(() => {});
-    return Promise.reject(abortError(signal.reason));
+    return Promise.reject(createError());
   }
   return new Promise((resolve, reject) => {
     const abort = () => {
       cleanup();
-      reject(abortError(signal.reason));
+      reject(createError());
     };
     const cleanup = () => signal.removeEventListener('abort', abort);
     signal.addEventListener('abort', abort, { once: true });

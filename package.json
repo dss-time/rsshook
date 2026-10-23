@@ -1,6 +1,6 @@
 {
   "name": "rsshook",
-  "version": "3.1.0",
+  "version": "3.2.0",
   "description": "React, Vue 3, and framework-agnostic TypeScript utilities",
   "main": "./dist/index.cjs",
   "module": "./dist/index.mjs",
@@ -245,6 +245,16 @@
       "types": "./dist/useUpdateCheck.d.ts",
       "import": "./dist/useUpdateCheck.mjs",
       "require": "./dist/useUpdateCheck.cjs"
+    },
+    "./react/useMediaQuery": {
+      "types": "./dist/useMediaQuery.d.ts",
+      "import": "./dist/useMediaQuery.mjs",
+      "require": "./dist/useMediaQuery.cjs"
+    },
+    "./react/useUrlState": {
+      "types": "./dist/useUrlState.d.ts",
+      "import": "./dist/useUrlState.mjs",
+      "require": "./dist/useUrlState.cjs"
     }
   },
   "files": [
@@ -468,6 +478,12 @@
       ],
       "react/useUpdateCheck": [
         "dist/useUpdateCheck.d.ts"
+      ],
+      "react/useMediaQuery": [
+        "dist/useMediaQuery.d.ts"
+      ],
+      "react/useUrlState": [
+        "dist/useUrlState.d.ts"
       ]
     }
   }

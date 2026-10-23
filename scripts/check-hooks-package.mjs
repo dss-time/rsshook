@@ -69,10 +69,20 @@ try {
   run(process.execPath, [
     '--input-type=module',
     '-e',
-    `import {useAsyncTask,useBatchTask} from 'rsshook/react/hooks';import {createRequire} from 'node:module';const r=createRequire(import.meta.url);if(typeof useAsyncTask!=='function'||typeof useBatchTask!=='function'||typeof r('rsshook/react/hooks').usePolling!=='function')throw Error('missing export');`,
+    `import {useAsyncTask,useBatchTask} from 'rsshook/react/hooks';import {createRequire} from 'node:module';const r=createRequire(import.meta.url);if(typeof useAsyncTask!=='function'||typeof useBatchTask!=='function'||typeof r('rsshook/react/hooks').usePolling!=='function'||typeof r('rsshook/react/useMediaQuery').useMediaQuery!=='function'||typeof r('rsshook/react/useUrlState').useUrlState!=='function')throw Error('missing export');`,
   ]);
-  const consumer = `import {useAsyncTask,usePolling,useBatchTask,useRowSelection,useCheckUpdate} from 'rsshook/react/hooks';
+  const consumer = `import {useAsyncTask,usePolling,useBatchTask,useRowSelection,useCheckUpdate,useMediaQuery,useUrlState} from 'rsshook/react/hooks';
+import type {MediaQueryOptions} from 'rsshook/react/useMediaQuery';
+import type {UrlStateAdapter} from 'rsshook/react/useUrlState';
+const mediaOptions:MediaQueryOptions={defaultMatches:true};void mediaOptions;
+const typedAdapter:UrlStateAdapter={getSearch:()=>'',subscribe:()=>()=>{},setSearch:()=>{}};void typedAdapter;
 function Example(){
+ const matches:boolean=useMediaQuery('(min-width: 800px)',{defaultMatches:false});void matches;
+ interface Filters {page:number}
+ const url=useUrlState<Filters>({page:{defaultValue:1,parse:v=>Number(v[0]),serialize:(n:number)=>[String(n)]}},{getSearch:()=>'',subscribe:()=>()=>{},setSearch:()=>{}});
+ url.setState(s=>({page:s.page+1}));url.reset();
+ // @ts-expect-error invalid URL field type
+ url.setState({page:'bad'});
  const task=useAsyncTask(async (id:string,signal:AbortSignal)=>{void signal;return {id};});task.run('a');
  // @ts-expect-error invalid request argument
  task.run(3);

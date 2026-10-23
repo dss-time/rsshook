@@ -30,7 +30,13 @@ export class WebSocketManager {
     };
 
     this.socket.onmessage = (event: MessageEvent) => {
-      this.messageListeners.forEach(listener => listener(event));
+      for (const listener of [...this.messageListeners]) {
+        try {
+          listener(event);
+        } catch {
+          /* One subscriber must not suppress others. */
+        }
+      }
     };
 
     this.socket.onclose = () => {
@@ -48,10 +54,17 @@ export class WebSocketManager {
     };
   }
 
-  public sendMessage(message: string) {
-    if (this.isConnected && this.socket) {
-      this.socket.send(message);
-    }
+  /** True means accepted by the local socket, not acknowledged by the server. */
+  public trySendMessage(message: string): boolean {
+    if (!this.isConnected || !this.socket || this.socket.readyState !== 1)
+      return false;
+    this.socket.send(message);
+    return true;
+  }
+
+  /** Legacy fire-and-forget API; use trySendMessage to inspect connection availability. */
+  public sendMessage(message: string): void {
+    this.trySendMessage(message);
   }
 
   public addMessageListener(listener: (message: MessageEvent) => void) {
@@ -65,7 +78,16 @@ export class WebSocketManager {
   public close() {
     this.closed = true;
     clearTimeout(this.reconnectTimer);
-    this.socket?.close();
     this.isConnected = false;
+    if (this.socket) {
+      this.socket.onopen =
+        this.socket.onmessage =
+        this.socket.onclose =
+        this.socket.onerror =
+          null;
+      this.socket.close();
+      this.socket = null;
+    }
+    this.messageListeners = [];
   }
 }

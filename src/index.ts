@@ -36,3 +36,7 @@ export * from './react/usePolling';
 export * from './react/useDebounceFn';
 export * from './react/useRowSelection';
 export * from './react/useBatchTask';
+
+export * from './react/useMediaQuery';
+export * from './react/useUrlState';
+export type { KeyboardOptions } from './hooks/useKeyboard';

@@ -12,6 +12,7 @@ if (process.env.HOOK_REACT_ROOT) {
       'react/jsx-dev-runtime',
       'react-dom',
       'react-dom/client',
+      'react-dom/server',
       'react-dom/test-utils',
     ].map(name => [name, from.resolve(name)])
   );

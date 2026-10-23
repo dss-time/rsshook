@@ -1,3 +1,4 @@
+import { abortableTask } from './abort';
 /**
  * Options for retrying an async task.
  *
@@ -159,27 +160,5 @@ export async function retryAsync<T>(
 /** @deprecated Plain async function; prefer retryAsync. */
 export const useRetry = retryAsync;
 function raceAbort<T>(promise: Promise<T>, signal?: AbortSignal): Promise<T> {
-  if (signal?.aborted) {
-    void promise.catch(() => {});
-    return Promise.reject(createAbortError());
-  }
-  if (!signal) return promise;
-  return new Promise((resolve, reject) => {
-    const abort = () => {
-      cleanup();
-      reject(createAbortError());
-    };
-    const cleanup = () => signal.removeEventListener('abort', abort);
-    signal.addEventListener('abort', abort, { once: true });
-    promise.then(
-      value => {
-        cleanup();
-        resolve(value);
-      },
-      error => {
-        cleanup();
-        reject(error);
-      }
-    );
-  });
+  return signal ? abortableTask(promise, signal, createAbortError) : promise;
 }

@@ -28,6 +28,8 @@ export default defineConfig({
       entry: {
         index: resolve(projectRoot, 'src/index.ts'),
         reactHooks: resolve(projectRoot, 'src/react/hooks.ts'),
+        useMediaQuery: resolve(projectRoot, 'src/react/useMediaQuery.ts'),
+        useUrlState: resolve(projectRoot, 'src/react/useUrlState.ts'),
         useAsyncTask: resolve(projectRoot, 'src/react/useAsyncTask.ts'),
         usePolling: resolve(projectRoot, 'src/react/usePolling.ts'),
         useDebounceFn: resolve(projectRoot, 'src/react/useDebounceFn.ts'),

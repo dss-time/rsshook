@@ -1,3 +1,4 @@
+import { stringifyQuery, mergeQuery } from './queryString';
 import { parseQuery, type QueryArrayFormat } from './parseQuery';
 
 export type { QueryArrayFormat } from './parseQuery';
@@ -58,52 +59,6 @@ export interface SyncSearchFormWithUrlInstance {
   mergeToUrl: (url: string, values: Record<string, unknown>) => string;
 }
 
-const isEmptyValue = (value: unknown) =>
-  value === undefined ||
-  value === null ||
-  value === '' ||
-  (Array.isArray(value) && value.length === 0);
-
-const appendQueryValue = (
-  params: URLSearchParams,
-  key: string,
-  value: unknown,
-  arrayFormat: QueryArrayFormat
-) => {
-  if (Array.isArray(value)) {
-    if (arrayFormat === 'comma') {
-      params.set(key, value.map(item => String(item)).join(','));
-      return;
-    }
-
-    value.forEach(item => {
-      params.append(arrayFormat === 'bracket' ? `${key}[]` : key, String(item));
-    });
-    return;
-  }
-
-  params.set(key, String(value));
-};
-
-const splitUrl = (url: string) => {
-  const [urlWithoutHash, hash = ''] = url.split('#');
-  const questionIndex = urlWithoutHash.indexOf('?');
-
-  if (questionIndex === -1) {
-    return {
-      base: urlWithoutHash,
-      search: '',
-      hash: hash ? `#${hash}` : '',
-    };
-  }
-
-  return {
-    base: urlWithoutHash.slice(0, questionIndex),
-    search: urlWithoutHash.slice(questionIndex + 1),
-    hash: hash ? `#${hash}` : '',
-  };
-};
-
 /**
  * Create helpers that synchronize table search form values with URL queries.
  *
@@ -124,17 +79,16 @@ export function syncSearchFormWithUrl(
     parseBoolean = false,
   } = options;
   const fieldSet = fields ? new Set(fields) : undefined;
-  const queryToFieldMap = Object.entries(fieldMap).reduce<Record<string, string>>(
-    (result, [field, queryKey]) => {
-      result[queryKey] = field;
-      return result;
-    },
-    {}
-  );
+  const queryToFieldMap = Object.entries(fieldMap).reduce<
+    Record<string, string>
+  >((result, [field, queryKey]) => {
+    result[queryKey] = field;
+    return result;
+  }, {});
 
   const shouldUseField = (field: string) => !fieldSet || fieldSet.has(field);
-  const getQueryKey = (field: string) => fieldMap[field] || field;
-  const getFieldKey = (queryKey: string) => queryToFieldMap[queryKey] || queryKey;
+  const getFieldKey = (queryKey: string) =>
+    queryToFieldMap[queryKey] || queryKey;
 
   const getInitialValues = (search = '') => {
     const parsed = parseQuery(search, {
@@ -158,47 +112,10 @@ export function syncSearchFormWithUrl(
     );
   };
 
-  const stringify = (values: Record<string, unknown>) => {
-    const params = new URLSearchParams();
-
-    Object.entries(values).forEach(([field, value]) => {
-      if (!shouldUseField(field)) {
-        return;
-      }
-
-      if (removeEmpty && isEmptyValue(value)) {
-        return;
-      }
-
-      appendQueryValue(params, getQueryKey(field), value, arrayFormat);
-    });
-
-    return params.toString();
-  };
-
-  const mergeToUrl = (url: string, values: Record<string, unknown>) => {
-    const { base, search, hash } = splitUrl(url);
-    const currentParams = new URLSearchParams(search);
-    const nextQuery = stringify(values);
-    const nextParams = new URLSearchParams(nextQuery);
-
-    Object.keys(values).forEach(field => {
-      if (!shouldUseField(field)) {
-        return;
-      }
-
-      const queryKey = getQueryKey(field);
-      currentParams.delete(queryKey);
-      currentParams.delete(`${queryKey}[]`);
-    });
-
-    nextParams.forEach((value, key) => {
-      currentParams.append(key, value);
-    });
-
-    const queryString = currentParams.toString();
-    return `${base}${queryString ? `?${queryString}` : ''}${hash}`;
-  };
+  const stringify = (values: Record<string, unknown>) =>
+    stringifyQuery(values, options);
+  const mergeToUrl = (url: string, values: Record<string, unknown>) =>
+    mergeQuery(url, values, options);
 
   return {
     getInitialValues,
